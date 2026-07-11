@@ -515,6 +515,9 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
 
     out = in;
 
+    if (!granulate_ctx->n_grains)
+        goto filter_end;
+
     int width = in->width;
     int height = in->height;
 
@@ -585,8 +588,9 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
         av_frame_copy_props(buf, in);
         granulate_in_frame(granulate_ctx, out, width, height);
     }
-    
+    filter_end:
     granulate_ctx->frame_count++;
+
 
     return ff_filter_frame(outlink, out);
 }
