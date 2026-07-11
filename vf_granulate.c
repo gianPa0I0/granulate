@@ -77,7 +77,7 @@ typedef struct GranulateContext {
 
 static const AVOption granulate_options[] = {
     { "mode", "set mode", OFFSET(mode), AV_OPT_TYPE_UINT, {.i64=MODE_PIXELS}, MODE_PIXELS, MODE_DITHER, FLAGS},
-    { "zoom", "set zoom amount", OFFSET(zoom_amount), AV_OPT_TYPE_UINT, {.i64=1}, 1, 256, FLAGS},
+    { "zoom", "set zoom amount", OFFSET(zoom_amount), AV_OPT_TYPE_UINT, {.i64=1}, 1, 256, FLAGS | R},
     {"zoom_offset_time", "set number of frames befor zoom offset is reset", OFFSET(zoom_offset_time), AV_OPT_TYPE_UINT, {.i64=0}, 0, INT64_MAX, FLAGS | R},
     { "buffer", "set the size of the buffer", OFFSET(buffer_size), AV_OPT_TYPE_UINT, {.i64=1}, 1, 8192, FLAGS},
     {"grain_w", "set the width of each grain in px", OFFSET(grain_w), AV_OPT_TYPE_UINT, {.i64=0}, 0, 8192, FLAGS},
@@ -157,10 +157,6 @@ static int config_props(AVFilterLink *inlink)
 
     granulate_ctx->log2_chroma_h = desc->log2_chroma_h;
     granulate_ctx->log2_chroma_w = desc->log2_chroma_w;
-
-    if (granulate_ctx->grain_h && granulate_ctx->grain_w)
-        granulate_ctx->fullscreen = 0;
-
 
     switch (inlink->format) {
         case (AV_PIX_FMT_YUV420P):
@@ -521,11 +517,17 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
     int width = in->width;
     int height = in->height;
 
+    if (granulate_ctx->grain_h && granulate_ctx->grain_w)
+        granulate_ctx->fullscreen = 0;
+
     if (!granulate_ctx->fullscreen) {
         if (granulate_ctx->grain_w > width)
             granulate_ctx->grain_w = width;
         if (granulate_ctx->grain_h > height)
             granulate_ctx->grain_h = height;
+    } else {
+        granulate_ctx->grain_w = width;
+        granulate_ctx->grain_h = height;
     }
 
     if (granulate_ctx->zoom_amount == 1) {
