@@ -416,13 +416,14 @@ static void granulate_rand(const GranulateContext *ctx, AVFrame *dst, AVFrame **
     int offset_w = ctx->zoom_offset_w;
     int offset_h = ctx->zoom_offset_h;
     int g_src = 0;
-    
-    for (int grain_count = 0; grain_count < n_grains; grain_count++) {
-        if (ctx->delay_set) {
+
+    if (ctx->delay_set) {
             g_src = (ctx->delay_set + ctx->frame_count) % ctx->buffer_size;
             src_f = src[g_src];
         }
-        else {
+    
+    for (int grain_count = 0; grain_count < n_grains; grain_count++) {
+        if (!ctx->delay_set) {
             if (ctx->buffer_full) {
                 g_src = av_lfg_get(ctx->lfg) % ctx->buffer_size;
                 src_f = src[g_src];
@@ -456,11 +457,13 @@ static void granulate_pos(const GranulateContext *ctx, AVFrame *dst, AVFrame **s
     GrainPos *grain_pos = ctx->grain_pos;
     int g_src = 0;
 
+    if (ctx->delay_set) {
+        g_src = (ctx->delay_set + ctx->frame_count) % ctx->buffer_size;
+        src_f = src[g_src];
+    }
+
     for (int grain_count = 0; grain_count < n_grains; grain_count++) {
-        if (ctx->delay_set) {
-            g_src = (ctx->delay_set + ctx->frame_count) % ctx->buffer_size;
-            src_f = src[g_src];
-        } else {
+        if (!ctx->delay_set) {
             if (ctx->buffer_full) {
                 g_src = av_lfg_get(ctx->lfg) % ctx->buffer_size;
                 src_f = src[g_src];
@@ -573,15 +576,19 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
     }
 
     if (granulate_ctx->buffer_size > 1) {
-        if (granulate_ctx->delay && granulate_ctx->buffer_full) {
-            if (!(granulate_ctx->frame_count % granulate_ctx->delay))
-                granulate_ctx->delay_set = 1 + (av_lfg_get(granulate_ctx->lfg) % (granulate_ctx->buffer_size - 1));
+        if (granulate_ctx->delay) {
+            if (granulate_ctx->buffer_full) {
+                if (!(granulate_ctx->frame_count % granulate_ctx->delay))
+                    granulate_ctx->delay_set = 1 + (av_lfg_get(granulate_ctx->lfg) % (granulate_ctx->buffer_size - 1));
+            } else {
+                if (!(granulate_ctx->frame_count % granulate_ctx->delay) && granulate_ctx->buffer_index > 1)
+                    granulate_ctx->delay_set = 1 + (av_lfg_get(granulate_ctx->lfg) % (granulate_ctx->buffer_index - 1));
+            }
         }
         AVFrame *buf = granulate_ctx->fbuffer[granulate_ctx->buffer_index];
         ret = av_frame_copy(buf, in);
         if (ret < 0)
             return ret;
-        av_frame_copy_props(buf, in);
         
         if (granulate_ctx->static_grains) {
             if (!granulate_ctx->grains_set) {
