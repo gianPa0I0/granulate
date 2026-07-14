@@ -47,6 +47,7 @@ Nella root di ffmpeg, mandare comando "./configure" e poi "make".
 
 `grains_reset_time` : numero di frame prima del reset delle coordinate fisse (int 0 - MAX)
 
+`delay` : numero di frame per il quale mantenere un delay fisso nel buffer (int 0 default - 8162)
 
 Per usare il filtro ./ffmpeg -i "path file di input" -vf "granulate=parametro1=x:parametro2=y..." "path di output"
 
@@ -98,6 +99,8 @@ Go back to ffmpeg root and send command "./configure" and then "make".
 `static_grains` : toggle to fix each grain to specific coordinates (int 0 - 1)
 
 `grains_reset_time` : number of frames before the fixed grain position is reset (int 0 - MAX)
+
+`delay` : number of frames before refresh of fixed buffer delay (int 0 default - 8192)
 
 Filter usage:
 ./ffmpeg -i "video path" -vf "granulate=parameter1=x:parameter2=y..." "output path"
