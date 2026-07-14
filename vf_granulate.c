@@ -537,8 +537,6 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
     if (granulate_ctx->grain_h && granulate_ctx->grain_w)
         granulate_ctx->fullscreen = 0;
 
-    if (granulate_ctx->delay > granulate_ctx->buffer_size)
-        granulate_ctx->delay = granulate_ctx->buffer_size - 1;
     if (!granulate_ctx->delay)
         granulate_ctx->delay_set = 0;
 
@@ -577,7 +575,7 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
     if (granulate_ctx->buffer_size > 1) {
         if (granulate_ctx->delay && granulate_ctx->buffer_full) {
             if (!(granulate_ctx->frame_count % granulate_ctx->delay))
-                granulate_ctx->delay_set = av_lfg_get(granulate_ctx->lfg) % granulate_ctx->buffer_size;
+                granulate_ctx->delay_set = 1 + (av_lfg_get(granulate_ctx->lfg) % (granulate_ctx->buffer_size - 1));
         }
         AVFrame *buf = granulate_ctx->fbuffer[granulate_ctx->buffer_index];
         ret = av_frame_copy(buf, in);
