@@ -576,14 +576,9 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
     }
 
     if (granulate_ctx->buffer_size > 1) {
-        if (granulate_ctx->delay) {
-            if (granulate_ctx->buffer_full) {
-                if (!(granulate_ctx->frame_count % granulate_ctx->delay))
-                    granulate_ctx->delay_set = 1 + (av_lfg_get(granulate_ctx->lfg) % (granulate_ctx->buffer_size - 1));
-            } else {
-                if (!(granulate_ctx->frame_count % granulate_ctx->delay) && granulate_ctx->buffer_index > 1)
-                    granulate_ctx->delay_set = 1 + (av_lfg_get(granulate_ctx->lfg) % (granulate_ctx->buffer_index - 1));
-            }
+        if (granulate_ctx->delay && granulate_ctx->buffer_full) {
+            if (!(granulate_ctx->frame_count % granulate_ctx->delay))
+                granulate_ctx->delay_set = 1 + (av_lfg_get(granulate_ctx->lfg) % (granulate_ctx->buffer_size - 1));
         }
         AVFrame *buf = granulate_ctx->fbuffer[granulate_ctx->buffer_index];
         ret = av_frame_copy(buf, in);
@@ -618,7 +613,6 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
         ret = av_frame_copy(buf, in);
         if (ret < 0)
             return ret;
-        av_frame_copy_props(buf, in);
         granulate_in_frame(granulate_ctx, out, width, height);
     }
     filter_end:
