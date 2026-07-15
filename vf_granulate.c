@@ -269,7 +269,7 @@ static void copy_grain_YUV(const AVFrame *dst, const AVFrame *src, int sx, int s
         }
     }
 
-    if (mode == MODE_INTERLACED_H) {
+    else if (mode == MODE_INTERLACED_H) {
         if (ghosting != 2) {
             for (int row = 0; row < grain_h; row++) {
                 if (!(row % 2)) {
@@ -299,7 +299,7 @@ static void copy_grain_YUV(const AVFrame *dst, const AVFrame *src, int sx, int s
         }
     }
 
-    if (mode == MODE_INTERLACED_V) {
+    else if (mode == MODE_INTERLACED_V) {
         if (ghosting != 2) {
             for (int row = 0; row < grain_h; row++) {
                 for (int col = 0; col < grain_w; col++) {
@@ -329,7 +329,7 @@ static void copy_grain_YUV(const AVFrame *dst, const AVFrame *src, int sx, int s
         }
     }
 
-    if (mode == MODE_DITHER) {
+    else if (mode == MODE_DITHER) {
         if (ghosting != 2) {
             for (int row = 0; row < grain_h; row++) {
                 for (int col = 0; col < grain_w; col++) {
@@ -374,7 +374,7 @@ static void copy_grain_GRAY(const AVFrame *dst, const AVFrame *src, int sx, int 
         }
     }
 
-    if (mode == MODE_INTERLACED_H) {
+    else if (mode == MODE_INTERLACED_H) {
         for (int row = 0; row < grain_h; row++) {
             if (!(row % 2)) {
                 for (int col = 0; col < grain_w; col++) {
@@ -384,7 +384,7 @@ static void copy_grain_GRAY(const AVFrame *dst, const AVFrame *src, int sx, int 
         }
     }
 
-    if (mode == MODE_INTERLACED_V) {
+    else if (mode == MODE_INTERLACED_V) {
         for (int row = 0; row < grain_h; row++) {
             for (int col = 0; col < grain_w; col++) {
                 if (!(col % 2)) {
@@ -395,7 +395,7 @@ static void copy_grain_GRAY(const AVFrame *dst, const AVFrame *src, int sx, int 
         
     }
 
-    if (mode == MODE_DITHER) {
+    else if (mode == MODE_DITHER) {
         for (int row = 0; row < grain_h; row++) {
             for (int col = 0; col < grain_w; col++) {
                 if (av_lfg_get(lfg) % 2)
