@@ -49,6 +49,8 @@ Nella root di ffmpeg, mandare comando "./configure" e poi "make".
 
 `delay` : numero di frame per il quale mantenere un delay fisso nel buffer (int 0 default - 8162)
 
+`seed` : seed per AVlfg (0 default - MAX)
+
 Per usare il filtro ./ffmpeg -i "path file di input" -vf "granulate=parametro1=x:parametro2=y..." "path di output"
 
 
@@ -101,6 +103,9 @@ Go back to ffmpeg root and send command "./configure" and then "make".
 `grains_reset_time` : number of frames before the fixed grain position is reset (int 0 - MAX)
 
 `delay` : number of frames before refresh of fixed buffer delay (int 0 default - 8192)
+
+`seed` : set seed for AVlfg (0 default - MAX)
+
 
 Filter usage:
 ./ffmpeg -i "video path" -vf "granulate=parameter1=x:parameter2=y..." "output path"
