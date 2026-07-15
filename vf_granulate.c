@@ -78,7 +78,7 @@ typedef struct GranulateContext {
 #define R AV_OPT_FLAG_RUNTIME_PARAM
 
 static const AVOption granulate_options[] = {
-    { "mode", "set mode", OFFSET(mode), AV_OPT_TYPE_UINT, {.i64=MODE_PIXELS}, MODE_PIXELS, MODE_DITHER, FLAGS},
+    { "mode", "set mode", OFFSET(mode), AV_OPT_TYPE_UINT, {.i64=MODE_PIXELS}, MODE_PIXELS, MODE_DITHER, FLAGS | R},
     { "zoom", "set zoom amount", OFFSET(zoom_amount), AV_OPT_TYPE_UINT, {.i64=1}, 1, 256, FLAGS | R},
     {"zoom_offset_time", "set number of frames befor zoom offset is reset", OFFSET(zoom_offset_time), AV_OPT_TYPE_UINT, {.i64=0}, 0, INT64_MAX, FLAGS | R},
     { "buffer", "set the size of the buffer", OFFSET(buffer_size), AV_OPT_TYPE_UINT, {.i64=1}, 1, 8192, FLAGS},
@@ -86,10 +86,10 @@ static const AVOption granulate_options[] = {
     {"grain_h", "set the height of each grain in px", OFFSET(grain_h), AV_OPT_TYPE_UINT, {.i64=0}, 0, 8192, FLAGS},
     {"fullscreen", "set grain size equal to frame size", OFFSET(fullscreen), AV_OPT_TYPE_BOOL, {.i64=1}, 0, 1, FLAGS},
     {"var_size", "toggle random grain size (grain_size as max size)", OFFSET(var_size), AV_OPT_TYPE_BOOL, {.i64=0}, 0, 1, FLAGS},
-    {"n_grains", "number of grains per frame", OFFSET(n_grains), AV_OPT_TYPE_UINT, {.i64=0}, 0, INT64_MAX, FLAGS},
+    {"n_grains", "number of grains per frame", OFFSET(n_grains), AV_OPT_TYPE_UINT, {.i64=0}, 0, INT64_MAX, FLAGS | R},
     {"ghosting", "select type of ghosting", OFFSET(ghosting), AV_OPT_TYPE_INT, {.i64=NO_GHOSTING}, NO_GHOSTING, CHROMA_GHOSTING, FLAGS | R},
     {"static_grains", "toggle stable grain position", OFFSET(static_grains), AV_OPT_TYPE_BOOL, {.i64=0}, 0, 1, FLAGS},
-    {"grains_reset_time","set number of frames before grain_pos reset", OFFSET(grains_reset_time), AV_OPT_TYPE_UINT, {.i64=0}, 0, INT64_MAX, FLAGS | R},
+    {"grains_reset_time","set number of frames before grain_pos reset", OFFSET(grains_reset_time), AV_OPT_TYPE_UINT, {.i64=0}, 0, INT64_MAX, FLAGS},
     {"delay", "set number of frames before refresh of delay", OFFSET(delay), AV_OPT_TYPE_UINT, {.i64=0}, 0, 8192, FLAGS | R},
     { NULL }
 };
@@ -146,6 +146,7 @@ static int query_formats(const AVFilterContext *ctx, AVFilterFormatsConfig **cfg
 
 static int granulate_process_command(AVFilterContext *ctx, const char *cmd, const char *arg, char *res, int res_len, int flags)
 {
+    av_log(ctx, AV_LOG_INFO, "Received command: %s=%s\n", cmd, arg);
     return ff_filter_process_command(ctx, cmd, arg, res, res_len, flags);
 }
 
@@ -559,13 +560,13 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
         granulate_ctx->zoom_offset_h = 0;
     }
     
-    if (granulate_ctx->zoom_set && granulate_ctx->zoom_amount > 1)
+    if (granulate_ctx->zoom_set && granulate_ctx->zoom_amount > 1) {
         if (granulate_ctx->zoom_offset_w >= (granulate_ctx->grain_w - (granulate_ctx->grain_w / granulate_ctx->zoom_amount)) || granulate_ctx->zoom_offset_h >= (granulate_ctx->grain_h - (granulate_ctx->grain_h / granulate_ctx->zoom_amount)))
             goto set_offset;
-
-    if (granulate_ctx->zoom_set && granulate_ctx->zoom_offset_time && granulate_ctx->zoom_amount > 1) {
-        if (!(granulate_ctx->frame_count % granulate_ctx->zoom_offset_time))
-            goto set_offset;        
+        if (granulate_ctx->zoom_offset_time) {
+            if (!(granulate_ctx->frame_count % granulate_ctx->zoom_offset_time))
+                goto set_offset;
+        }
     }
 
     if (!granulate_ctx->zoom_set && granulate_ctx->zoom_amount > 1) {
