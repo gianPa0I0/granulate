@@ -1,5 +1,3 @@
-#Granulate
-
 # FF_VF_GRANULATE Italiano
 
 Filtro FFMPEG (Granulatore Video) che granula frame precedenti in quello attuale,
