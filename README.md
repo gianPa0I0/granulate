@@ -1,6 +1,8 @@
+#Granulate
+
 # FF_VF_GRANULATE Italiano
 
-Filtro FFMPEG che granula frame precedenti in quello attuale,
+Filtro FFMPEG (Granulatore Video) che granula frame precedenti in quello attuale,
 Progetto Tesi Triennale IUAV Arti Multimediali
 
 ## Files
@@ -54,7 +56,7 @@ Per usare il filtro ./ffmpeg -i "path file di input" -vf "granulate=parametro1=x
 
 # FF_VF_GRANULATE English
 
-FFMPEG Filter that granulates past frames in current frame
+FFMPEG Filter (Video Granulator) that granulates past frames in current frame
 
 ## Files
 
