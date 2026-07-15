@@ -17,10 +17,10 @@ Nella root di ffmpeg, mandare comando "./configure" e poi "make".
 ## Parametri e utilizzo
 
 `mode` : tipo di grani da usare
-    0 = pixel = grani interi (default)
-    1 = interlaced h = grani a righe alterne
-    2 = interlaced v = grani a colonne alterne
-    3 = dither = grani con alpha casuale
+    0 = pixel : grani interi (default)
+    1 = interlaced h : grani a righe alterne
+    2 = interlaced v : grani a colonne alterne
+    3 = dither : grani con alpha casuale
 
 `zoom` : zoom sul grano (int 1 - 256)
 
@@ -28,9 +28,9 @@ Nella root di ffmpeg, mandare comando "./configure" e poi "make".
 
 `buffer` : numero di frame archiviati nel buffer fifo degli ultimi frame da cui vengono pescati grani (int 1 - 8192)
 
-`grain_w` : larghezza in pixel del grano (int 0 - 8192)
+`grain_w` : larghezza in pixel di ogni grano (int 0 - 8192)
 
-`grain_h` : altezza in pixel del grano (int 0 - 8192)
+`grain_h` : altezza in pixel di ogni grano  (int 0 - 8192)
 
 `fullscreen` : toggle larghezza e altezza uguali al frame (int 0 - 1 default)
 
@@ -70,10 +70,10 @@ Go back to ffmpeg root and send command "./configure" and then "make".
 ## Parameters and usage
 
 `mode` : type of grains
-    0 = pixel = rectangular grains (default)
-    1 = interlaced h = granulates every other line
-    2 = interlaced v = granulates every other column
-    3 = dither = sets the alpha to a random value for every pixel of every grain
+    0 = pixel : rectangular grains (default)
+    1 = interlaced h : granulates every other line
+    2 = interlaced v : granulates every other column
+    3 = dither : sets the alpha to a random value for every pixel of every grain
 
 `zoom` : in-grain-zoom (int 1 - 256)
 
@@ -81,9 +81,9 @@ Go back to ffmpeg root and send command "./configure" and then "make".
 
 `buffer` : fifo - number of frames archived (int 1 - 8192)
 
-`grain_w` : width of the grain in pixels (int 0 - 8192)
+`grain_w` : width of each grains in pixels (int 0 - 8192)
 
-`grain_h` : height of the grains in pixels (int 0 - 8192)
+`grain_h` : height of each grain in pixels (int 0 - 8192)
 
 `fullscreen` : toggle width and height equal to frame size (int 0 - 1 default)
 
