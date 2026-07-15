@@ -20,7 +20,7 @@ Nella root di ffmpeg, mandare comando "./configure" e poi "make".
     0 = pixel : grani interi (default)
     1 = interlaced h : grani a righe alterne
     2 = interlaced v : grani a colonne alterne
-    3 = dither : grani con alpha casuale
+    3 = dither : grani che alternano pixel originali e granulati in modo casuale
 
 `zoom` : zoom sul grano (int 1 - 256)
 
@@ -73,7 +73,7 @@ Go back to ffmpeg root and send command "./configure" and then "make".
     0 = pixel : rectangular grains (default)
     1 = interlaced h : granulates every other line
     2 = interlaced v : granulates every other column
-    3 = dither : sets the alpha to a random value for every pixel of every grain
+    3 = dither : sets random interlacing of granulated pixels and original pixels 
 
 `zoom` : in-grain-zoom (int 1 - 256)
 
