@@ -252,6 +252,12 @@ int main(int argc, char *argv[]) {
                 }
             }
         }
+        if (params[5].val || params[6].val) {
+                params[7].val = 0;
+        }
+        else {
+            params[7].val = 1;
+        }
         draw_screen(sel, win_params, win_values, win_input, win_output);
         if (cmd) {
 
