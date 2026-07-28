@@ -19,6 +19,12 @@ typedef enum FilterMode {
     MODE_DITHER
 } filter_mode;
 
+typedef enum GhostingMode {
+    NO_GHOSTING,
+    LUMA_GHOSTING,
+    CHROMA_GHOSTING
+} ghosting_mode;
+
 #define NPARAMS 14
 
 typedef struct granulate_params { 
@@ -46,23 +52,27 @@ static granulate_params params[NPARAMS] = {
 };
 
 static int newval = -2;
-static int i_or_o = 0;
+static int live = 0;
 static int cmd = 0;
 static char input[256] = "";
 static char output[256] = "";
 static char compose[8192];
 
-void draw_screen(int sel, WINDOW *win_params, WINDOW *win_values, WINDOW *win_input, WINDOW *win_output) {
+
+void draw_screen(int sel, WINDOW *win_params, WINDOW *win_values, WINDOW *win_input, WINDOW *win_output, WINDOW *win_live) {
 
     werase(win_params);
     werase(win_values);
     werase(win_input);
     werase(win_output);
+    werase(win_live);
     box(win_params, 0, 0);
     box(win_values, 0, 0);
     box(win_input, 0, 0);
     box(win_output, 0, 0);
-    mvprintw(LINES - 2, 2, "Up and Down to move, Enter to send the command, ^C to quit");
+    box(win_live, 0, 0);
+
+    mvprintw(LINES - 2, 2, "Up and Down to move, Tab to change OUTPUT Mode, Enter to send the command, ^C to quit");
     mvwprintw(win_params, 0, 2, "Params");
     mvwprintw(win_values, 0, 2, "Values");
     if (sel == NPARAMS)
@@ -78,6 +88,13 @@ void draw_screen(int sel, WINDOW *win_params, WINDOW *win_values, WINDOW *win_in
     mvwprintw(win_output, 1, 2, "%s", output);
     wattroff(win_input, A_STANDOUT);
     wattroff(win_output, A_STANDOUT);
+
+    if (live) {
+        mvwprintw(win_live, 1, 2, "%s", "LIVE");
+    }
+    else {
+        mvwprintw(win_live, 1, 2, "%s", "FILE");
+    }
     
     int row_values, col_values;
     getmaxyx(win_values, row_values, col_values);
@@ -105,14 +122,16 @@ void draw_screen(int sel, WINDOW *win_params, WINDOW *win_values, WINDOW *win_in
     wnoutrefresh(win_values);
     wnoutrefresh(win_input);
     wnoutrefresh(win_output);
+    wnoutrefresh(win_live);
     doupdate();   
 }
 
-void layout_windows(WINDOW **win_params, WINDOW **win_values, WINDOW **win_input, WINDOW **win_output) {
+void layout_windows(WINDOW **win_params, WINDOW **win_values, WINDOW **win_input, WINDOW **win_output, WINDOW **win_live) {
     if (*win_params) delwin(*win_params);
     if (*win_values) delwin(*win_values);
     if (*win_input)  delwin(*win_input);
     if (*win_output) delwin(*win_output);
+    if (*win_live) delwin(*win_live);
 
     int top_width = COLS / 2 - 2;
     int top_height = NPARAMS + 2;
@@ -120,12 +139,19 @@ void layout_windows(WINDOW **win_params, WINDOW **win_values, WINDOW **win_input
     *win_params = newwin(top_height, top_width, 1, 1);
     *win_values = newwin(top_height, top_width, 1, top_width + 2);
 
+    int middle_height = 3;
+    int middle_y = top_height + 4;
+    int middle_width = 8;
+
+    *win_live = newwin(middle_height, middle_width, middle_y, 1);
+
     int bottom_height = 4;
     int bottom_y = LINES - bottom_height - 4;
     int bottom_width = COLS / 2 - 2;
 
     *win_input  = newwin(bottom_height, bottom_width, bottom_y, 1);
     *win_output = newwin(bottom_height, bottom_width, bottom_y, bottom_width + 2);
+
 }
 
 int main(int argc, char *argv[]) {
@@ -135,14 +161,13 @@ int main(int argc, char *argv[]) {
     keypad(stdscr, TRUE);
     curs_set(0);
     int i;
-
-    WINDOW *win_params = NULL, *win_values = NULL, *win_input = NULL, *win_output = NULL;
-    
-    layout_windows(&win_params, &win_values, &win_input, &win_output);
-
     int sel = 0;
     int ch;
-    draw_screen(sel, win_params, win_values, win_input, win_output);
+
+    WINDOW *win_params = NULL, *win_values = NULL, *win_input = NULL, *win_output = NULL, *win_live = NULL;
+    
+    layout_windows(&win_params, &win_values, &win_input, &win_output, &win_live);
+    draw_screen(sel, win_params, win_values, win_input, win_output, win_live);
 
     while (run) {
         ch = getch();
@@ -150,7 +175,7 @@ int main(int argc, char *argv[]) {
         if (ch == KEY_RESIZE) {
             clear();
             refresh();
-            layout_windows(&win_params, &win_values, &win_input, &win_output);
+            layout_windows(&win_params, &win_values, &win_input, &win_output, &win_live);
         }
         else if (ch >= '0' && ch <='9' && sel <= NPARAMS -1)
         {
@@ -179,11 +204,17 @@ int main(int argc, char *argv[]) {
                 case '\r':
                     cmd = 1;
                     break;
+                case '\t':
+                    if (live)
+                        live = 0;
+                    else
+                        live = 1;
+                    break;
                 default:
                     break;
             }
         }
-        if (sel < 13) {
+        if (sel <= 13) {
             int mom;
             if (newval >= 0 && newval <= 9) {
                 mom = params[sel].val * 10 + newval;
@@ -258,15 +289,30 @@ int main(int argc, char *argv[]) {
         else {
             params[7].val = 1;
         }
-        draw_screen(sel, win_params, win_values, win_input, win_output);
+        draw_screen(sel, win_params, win_values, win_input, win_output, win_live);
         if (cmd) {
+            char *zmq;
+            char *loop;
+            char *force;
+            if (live) {
+                //zmq = "zmq,";
+                zmq = "";
+                loop= "-stream_loop -1 -re";
+                force = "-f matroska - | cvlc -";
 
-            snprintf(compose, sizeof(compose), "./ffmpeg -i %s -vf \
-            \"granulate=%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu\" %s"\
-            , input, params[0].param, params[0].val, params[1].param, params[1].val, params[2].param, params[2].val\
+            }
+            else {
+                zmq = "";
+                loop = "";
+                force = "";
+            }
+
+            snprintf(compose, sizeof(compose), "./ffmpeg %s -i %s -vf \
+            \"%sgranulate=%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu\" %s"\
+            , loop ,input, zmq, params[0].param, params[0].val, params[1].param, params[1].val, params[2].param, params[2].val\
             , params[3].param, params[3].val, params[4].param, params[4].val, params[5].param, params[5].val, params[6].param, params[6].val\
             , params[7].param, params[7].val, params[8].param, params[8].val, params[9].param, params[9].val, params[10].param, params[10].val\
-            , params[11].param, params[11].val, params[12].param, params[12].val, params[13].param, params[13].val, output);
+            , params[11].param, params[11].val, params[12].param, params[12].val, params[13].param, params[13].val, (live ? force : output));
 
             run = 0;
         }
@@ -276,6 +322,7 @@ int main(int argc, char *argv[]) {
     delwin(win_values);
     delwin(win_input);
     delwin(win_output);
+    delwin(win_live);
     endwin();
     printf("Executing Command\n");
     system(compose);
