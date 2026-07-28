@@ -169,10 +169,10 @@ int main(int argc, char *argv[]) {
                     sel = (sel < NPARAMS + 1) ? sel + 1 : 0;
                     break;
                 case KEY_RIGHT:
-                    (params[sel].val < UINT64_MAX) ? params[sel].val++ : (params[sel].val = 0);
+                    (params[sel].val < params[sel].max) ? params[sel].val++ : (params[sel].val = params[sel].min);
                     break;
                 case KEY_LEFT:
-                    (params[sel].val != 0) ? params[sel].val-- : (params[sel].val = 0);
+                    (params[sel].val > params[sel].min) ? params[sel].val-- : (params[sel].val = params[sel].max);
                     break;
                 case KEY_ENTER:
                 case '\n':
@@ -184,11 +184,16 @@ int main(int argc, char *argv[]) {
             }
         }
         if (sel < 13) {
+            int mom;
             if (newval >= 0 && newval <= 9) {
-                params[sel].val = params[sel].val * 10 + newval;
+                mom = params[sel].val * 10 + newval;
+                if (mom <= params[sel].max)
+                    params[sel].val = mom;
             }
             if (newval == -1) {
-                params[sel].val = params[sel].val / 10;
+                mom = params[sel].val / 10;
+                if (mom >= params[sel].min)
+                    params[sel].val = mom;
             }
         }
         else if (newval != -1) {
