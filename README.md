@@ -5,7 +5,8 @@ Progetto Tesi Triennale IUAV Arti Multimediali
 
 ## Files
 
-- `vf_granulate.c` — implementazione del filtro
+- `vf_granulate.c` -> implementazione del filtro
+- `tuigran.c` -> piccolo tui per mandare i comandi più facilmente
 
 ## Integrazione in FFmpeg
 
@@ -16,15 +17,17 @@ Nella root di ffmpeg, mandare comando "./configure" e poi "make".
 
 ## Parametri e utilizzo
 
-`mode` : tipo di grani da usare
-    0 = pixel : grani interi (default)
-    1 = interlaced h : grani a righe alterne
-    2 = interlaced v : grani a colonne alterne
-    3 = dither : grani che alternano pixel originali e granulati in modo casuale
+`mode` : tipo di grani da usare  
+    0 = pixel : grani interi (default)  
+    1 = interlaced h : grani a righe alterne  
+    2 = interlaced v : grani a colonne alterne  
+    3 = dither : grani che alternano pixel originali e granulati in modo casuale  
 
 `zoom` : zoom sul grano (int 1 - 256)
 
 `zoom_offset_time` : numero di frame per i quali l'offset sul grano zoomato rimane fisso (int 0 - MAX)
+
+`n_grains` : numero di grani per frame (int 0 - MAX)
 
 `buffer` : numero di frame archiviati nel buffer fifo degli ultimi frame da cui vengono pescati grani (int 1 - 8192)
 
@@ -36,12 +39,10 @@ Nella root di ffmpeg, mandare comando "./configure" e poi "make".
 
 `var_size` : larghezza e altezza modificati casualmente, rimanendo nei valori tra 1 e grain_w e grain_h (int 0 - 1)
 
-`n_grains` : numero di grani per frame (int 0 - MAX)
-
-`ghosting` : divisione dei componenti
-    0 = no ghosting : nessun ghosting (default)
-    1 = luma ghosting : solo componente luma usata per granulare
-    2 = chroma ghosting : solo componente chtoma usata per granulare
+`ghosting` : divisione dei componenti  
+    0 = no ghosting : nessun ghosting (default)  
+    1 = luma ghosting : solo componente luma usata per granulare  
+    2 = chroma ghosting : solo componente chroma usata per granulare  
 
 `static_grains` : toggle per fissare ogni grano a delle coordinate specifiche (int 0 - 1)
 
@@ -60,7 +61,8 @@ FFMPEG Filter (Video Granulator) that granulates past frames in current frame
 
 ## Files
 
-- `vf_granulate.c` — filter implementation
+- `vf_granulate.c` -> the filter itself
+- `tuigran.c` -> a small and stupid tui to send commands
 
 ## FFmpeg compilation
 
@@ -71,15 +73,17 @@ Go back to ffmpeg root and send command "./configure" and then "make".
 
 ## Parameters and usage
 
-`mode` : type of grains
-    0 = pixel : rectangular grains (default)
-    1 = interlaced h : granulates every other line
-    2 = interlaced v : granulates every other column
-    3 = dither : sets random interlacing of granulated pixels and original pixels 
+`mode` : type of grains  
+    0 = pixel : rectangular grains (default)  
+    1 = interlaced h : granulates every other line  
+    2 = interlaced v : granulates every other column  
+    3 = dither : sets random interlacing of granulated pixels and original pixels  
 
 `zoom` : in-grain-zoom (int 1 - 256)
 
-`zoom_offset_time` : number of frames before the offset of the zoom is reset (int 0 - MAX)
+`zoom_offset_time` : number of frames before the offset of the zoom is reset (int 0 - MAX)  
+
+`n_grains` : number of grains per frame (int 0 - MAX)  
 
 `buffer` : fifo - number of frames archived (int 1 - 8192)
 
@@ -91,12 +95,10 @@ Go back to ffmpeg root and send command "./configure" and then "make".
 
 `var_size` : toggle random grain size, uses width and height as max value (int 0 - 1)
 
-`n_grains` : number of grains per frame (int 0 - MAX)
-
-`ghosting` : isolate components
-    0 = no ghosting : no ghosting (default)
-    1 = luma ghosting : only luma granulation
-    2 = chroma ghosting : only chroma granulation
+`ghosting` : isolate components  
+    0 = no ghosting : no ghosting (default)  
+    1 = luma ghosting : only luma granulation  
+    2 = chroma ghosting : only chroma granulation  
 
 `static_grains` : toggle to fix each grain to specific coordinates (int 0 - 1)
 
