@@ -128,10 +128,10 @@ static av_cold int init(AVFilterContext *ctx)
     av_lfg_init(granulate_ctx->lfg, granulate_ctx->seed);
 
     if (granulate_ctx->static_grains) {
-            granulate_ctx->grain_pos = av_calloc(granulate_ctx->n_grains, sizeof(GrainPos));
+        granulate_ctx->grain_pos = av_calloc(granulate_ctx->n_grains, sizeof(GrainPos));
 
-            if (!granulate_ctx->grain_pos)
-                return AVERROR(ENOMEM);
+        if (!granulate_ctx->grain_pos)
+            return AVERROR(ENOMEM);
     }
 
     granulate_ctx->fbuffer = av_calloc(granulate_ctx->buffer_size, sizeof(AVFrame *));
@@ -198,7 +198,8 @@ static int config_props(AVFilterLink *inlink)
             granulate_ctx->PixFmt = AV_PIX_FMT_RGB24; granulate_ctx->copy_grain_fn = copy_grain_RGB; break;
         case (AV_PIX_FMT_BGR24):
             granulate_ctx->PixFmt = AV_PIX_FMT_BGR24; granulate_ctx->copy_grain_fn = copy_grain_RGB; break;
-            default: return AVERROR(EINVAL);
+        default: 
+            return AVERROR(EINVAL);
     }
         for (int i = 0; i < granulate_ctx->buffer_size; i++) {
             AVFrame *f = granulate_ctx->fbuffer[i];
@@ -547,9 +548,9 @@ static void granulate_rand(const GranulateContext *ctx, AVFrame *dst, AVFrame **
     int g_src = 0;
 
     if (ctx->delay_set) {
-            g_src = (ctx->delay_set + ctx->frame_count) % ctx->buffer_size;
-            src_f = src[g_src];
-        }
+        g_src = (ctx->delay_set + ctx->frame_count) % ctx->buffer_size;
+        src_f = src[g_src];
+    }
     
     for (int grain_count = 0; grain_count < n_grains; grain_count++) {
         if (!ctx->delay_set) {
@@ -741,7 +742,7 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
             return ret;
         granulate_in_frame(granulate_ctx, out, width, height);
     }
-    filter_end:
+filter_end:
     granulate_ctx->frame_count++;
 
 
