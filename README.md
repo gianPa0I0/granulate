@@ -11,8 +11,8 @@ Progetto Tesi Triennale IUAV Arti Multimediali
 ## Integrazione in FFmpeg
 
 Copiare `vf_granulate.c` in `libavfilter/` e aggiungere la voce in
-`allfilters.c` "OBJS-$(CONFIG_GRANULATE_FILTER) += vf_granulate.o"
-e nel `Makefile` "extern const FFFilter ff_vf_granulate;".
+`allfilters.c` "extern const FFFilter ff_vf_granulate;"
+e nel `Makefile` "OBJS-$(CONFIG_GRANULATE_FILTER) += vf_granulate.o".
 Nella root di ffmpeg, mandare comando "./configure" e poi "make".
 
 ## Parametri e utilizzo
@@ -67,8 +67,8 @@ FFMPEG Filter (Video Granulator) that granulates past frames in current frame
 ## FFmpeg compilation
 
 Copy `vf_granulate.c` in `libavfilter/` add record to
-`allfilters.c` "OBJS-$(CONFIG_GRANULATE_FILTER) += vf_granulate.o"
-and to `Makefile` "extern const FFFilter ff_vf_granulate;".
+`allfilters.c` "extern const FFFilter ff_vf_granulate;"
+and to `Makefile` "OBJS-$(CONFIG_GRANULATE_FILTER) += vf_granulate.o".
 Go back to ffmpeg root and send command "./configure" and then "make".
 
 ## Parameters and usage
