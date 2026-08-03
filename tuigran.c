@@ -11,20 +11,6 @@ volatile sig_atomic_t run = 1;
 static void handler(int errno) {
     run = 0;
 }
-/*
-typedef enum FilterMode {
-    MODE_PIXELS,
-    MODE_INTERLACED_H,
-    MODE_INTERLACED_V,
-    MODE_DITHER
-} filter_mode;
-
-typedef enum GhostingMode {
-    NO_GHOSTING,
-    LUMA_GHOSTING,
-    CHROMA_GHOSTING
-} ghosting_mode;
-*/
 
 const static char *filter_mode[] = {
     "MODE_PIXELS", "MODE_INTERLACED_H", "MODE_INTERLACED_V", "MODE_DITHER"
@@ -92,7 +78,9 @@ static void draw_screen(windows *windows) {
     box(windows->win_output, 0, 0);
     box(windows->win_live, 0, 0);
 
-    mvprintw(LINES - 2, 2, "Up and Down to move, Tab to change OUTPUT Mode, Enter to send the command, ^C to quit");
+    mvprintw(LINES - 4, 2, "Up and Down to move, Tab to change OUTPUT Mode, Enter to start FFMPEG, ^C to quit");
+    mvprintw(LINES - 3, 2, "In FFMPEG, Press ^c to abort. Press c to open prompt to send commands: ");
+    mvprintw(LINES - 2, 2, "'granulate' 'time to wait (-1 for ASAP)' 'param' 'value'");
     mvwprintw(windows->win_params, 0, 2, "Params");
     mvwprintw(windows->win_values, 0, 2, "Values");
     if (sel == INPUT)
@@ -180,13 +168,13 @@ static void layout_windows(windows *windows) {
     windows->win_values = newwin(top_height, top_width, 1, top_width + 2);
 
     int middle_height = 3;
-    int middle_y = top_height + 4;
+    int middle_y = top_height + 8;
     int middle_width = 8;
 
     windows->win_live = newwin(middle_height, middle_width, middle_y, 1);
 
     int bottom_height = 4;
-    int bottom_y = LINES - bottom_height - 4;
+    int bottom_y = LINES - bottom_height - 8;
     int bottom_width = COLS / 2 - 2;
 
     windows->win_input  = newwin(bottom_height, bottom_width, bottom_y, 1);
@@ -319,29 +307,26 @@ void manage_input(int ch, windows *windows) {
         params[7].val = 1;
     }
     if (cmd) {
-        char *zmq;
         char *loop;
         char *force;
         if (live) {
-            //zmq = "zmq,";
-            zmq = "";
             loop= "-stream_loop -1 -re";
             force = "-f matroska - | cvlc -";
 
         }
         else {
-            zmq = "";
             loop = "";
             force = "";
         }
-
         snprintf(compose, sizeof(compose), "./ffmpeg %s -i %s -vf \
-        \"%sgranulate=%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu\" %s"\
-        , loop ,input, zmq, params[0].param, params[0].val, params[1].param, params[1].val, params[2].param, params[2].val\
+        \"granulate=%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu\" %s"\
+        , loop ,input, params[0].param, params[0].val, params[1].param, params[1].val, params[2].param, params[2].val\
         , params[3].param, params[3].val, params[4].param, params[4].val, params[5].param, params[5].val, params[6].param, params[6].val\
         , params[7].param, params[7].val, params[8].param, params[8].val, params[9].param, params[9].val, params[10].param, params[10].val\
         , params[11].param, params[11].val, params[12].param, params[12].val, params[13].param, params[13].val, (live ? force : output));
 
+        //c: granulate -1 param value
+        
         run = 0;
     }
 }
@@ -366,14 +351,18 @@ int main(int argc, char *argv[]) {
         draw_screen(&windows);
     }
 
+    FILE *ffmpeg = NULL;
+
     delwin(windows.win_params);
     delwin(windows.win_values);
     delwin(windows.win_input);
     delwin(windows.win_output);
     delwin(windows.win_live);
     endwin();
+
     printf("Executing Command, ^c to Halt\n");
     system(compose);
+
     printf("Press any button to exit\n");
     getchar();
     return 0;
