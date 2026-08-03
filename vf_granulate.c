@@ -82,12 +82,12 @@ static const AVOption granulate_options[] = {
     {"mode", "set mode", OFFSET(mode), AV_OPT_TYPE_UINT, {.i64=MODE_PIXELS}, MODE_PIXELS, MODE_DITHER, FLAGS | R},
     {"zoom", "set zoom amount", OFFSET(zoom_amount), AV_OPT_TYPE_UINT, {.i64=1}, 1, 256, FLAGS | R},
     {"zoom_offset_time", "set number of frames befor zoom offset is reset", OFFSET(zoom_offset_time), AV_OPT_TYPE_UINT64, {.i64=0}, 0, UINT64_MAX, FLAGS | R},
+    {"n_grains", "number of grains per frame", OFFSET(n_grains), AV_OPT_TYPE_UINT64, {.i64=0}, 0, UINT64_MAX, FLAGS},
     {"buffer", "set the size of the buffer", OFFSET(buffer_size), AV_OPT_TYPE_UINT, {.i64=1}, 1, 8192, FLAGS},
     {"grain_w", "set the width of each grain in px", OFFSET(grain_w), AV_OPT_TYPE_UINT, {.i64=0}, 0, 8192, FLAGS},
     {"grain_h", "set the height of each grain in px", OFFSET(grain_h), AV_OPT_TYPE_UINT, {.i64=0}, 0, 8192, FLAGS},
     {"fullscreen", "set grain size equal to frame size", OFFSET(fullscreen), AV_OPT_TYPE_BOOL, {.i64=1}, 0, 1, FLAGS},
     {"var_size", "toggle random grain size (grain_size as max size)", OFFSET(var_size), AV_OPT_TYPE_BOOL, {.i64=0}, 0, 1, FLAGS},
-    {"n_grains", "number of grains per frame", OFFSET(n_grains), AV_OPT_TYPE_UINT64, {.i64=0}, 0, UINT64_MAX, FLAGS},
     {"ghosting", "select type of ghosting", OFFSET(ghosting), AV_OPT_TYPE_INT, {.i64=NO_GHOSTING}, NO_GHOSTING, CHROMA_GHOSTING, FLAGS | R},
     {"static_grains", "toggle stable grain position", OFFSET(static_grains), AV_OPT_TYPE_BOOL, {.i64=0}, 0, 1, FLAGS},
     {"grains_reset_time","set number of frames before grain_pos reset", OFFSET(grains_reset_time), AV_OPT_TYPE_UINT64, {.i64=0}, 0, UINT64_MAX, FLAGS},
@@ -125,9 +125,11 @@ static av_cold int init(AVFilterContext *ctx)
 
     for (i = 0; i < granulate_ctx->buffer_size; i++) {
         granulate_ctx->fbuffer[i] = av_frame_alloc();
+
+        if (!granulate_ctx->fbuffer[i])
+            return AVERROR(ENOMEM);
     }
     granulate_ctx->buffer_index = 0;
-
     granulate_ctx->zoom_offset_w = 0;
     granulate_ctx->zoom_offset_h = 0;
     granulate_ctx->frame_count = 0;
@@ -421,6 +423,7 @@ static void copy_grain_RGB(const AVFrame *dst, const AVFrame *src, int sx, int s
                 }
             }
         }
+        
         else {
             for (int row = 0; row < grain_h; row++) {
                 for (int col = 0; col < grain_w; col++) {
