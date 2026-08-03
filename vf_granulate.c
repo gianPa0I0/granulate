@@ -639,6 +639,11 @@ static void init_granulate_pos(const GranulateContext *ctx, int width, int heigh
     }
 }
 
+static void set_offset(GranulateContext *ctx) {
+    ctx->zoom_offset_w = av_lfg_get(ctx->lfg) % (ctx->grain_w - (ctx->grain_w / ctx->zoom_amount));
+    ctx->zoom_offset_h = av_lfg_get(ctx->lfg) % (ctx->grain_h - (ctx->grain_h / ctx->zoom_amount));
+}
+
 
 static int filter_frame(AVFilterLink *inlink, AVFrame *in)
 {
@@ -684,18 +689,16 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
     
     if (granulate_ctx->zoom_set && granulate_ctx->zoom_amount > 1) {
         if (granulate_ctx->zoom_offset_w >= (granulate_ctx->grain_w - (granulate_ctx->grain_w / granulate_ctx->zoom_amount)) || granulate_ctx->zoom_offset_h >= (granulate_ctx->grain_h - (granulate_ctx->grain_h / granulate_ctx->zoom_amount)))
-            goto set_offset;
+            set_offset(granulate_ctx);
         if (granulate_ctx->zoom_offset_time) {
             if (!(granulate_ctx->frame_count % granulate_ctx->zoom_offset_time))
-                goto set_offset;
+                set_offset(granulate_ctx);
         }
     }
 
     if (!granulate_ctx->zoom_set && granulate_ctx->zoom_amount > 1) {
         granulate_ctx->zoom_set = 1;
-        set_offset:
-            granulate_ctx->zoom_offset_w = av_lfg_get(granulate_ctx->lfg) % (granulate_ctx->grain_w - (granulate_ctx->grain_w / granulate_ctx->zoom_amount));
-            granulate_ctx->zoom_offset_h = av_lfg_get(granulate_ctx->lfg) % (granulate_ctx->grain_h - (granulate_ctx->grain_h / granulate_ctx->zoom_amount));
+        set_offset(granulate_ctx);
     }
 
     if (granulate_ctx->buffer_size > 1) {
