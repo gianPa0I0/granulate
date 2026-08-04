@@ -20,7 +20,7 @@ const static char *ghosting_mode[] = {
     "NO_GHOSTING", "LUMA_GHOSTING", "CHROMA_GHOSTING"
 };
 
-#define NPARAMS 14
+#define NPARAMS 13
 #define INPUT NPARAMS
 #define OUTPUT (NPARAMS + 1)
 
@@ -47,7 +47,6 @@ static granulate_params params[NPARAMS] = {
     {1, 1, 8192, "buffer"},
     {0, 0, 8192, "grain_w"},
     {0, 0, 8192, "grain_h"},
-    {1, 0, 1, "fullscreen"},
     {0, 0, 1, "var_size"},
     {0, 0, 2, "ghosting"},
     {0, 0, 1, "static_grains"},
@@ -120,7 +119,7 @@ static void draw_screen(windows *windows) {
                 mvwprintw(windows->win_values, y, 2, "%s", filter_mode[params[i].val]);
                 wattroff(windows->win_values, A_STANDOUT);
             }
-            else if (i == 9) {
+            else if (i == 8) {
                 wattron(windows->win_values, A_STANDOUT);
                 mvwprintw(windows->win_values, y, 2, "%s", ghosting_mode[params[i].val]);
                 wattroff(windows->win_values, A_STANDOUT);
@@ -136,7 +135,7 @@ static void draw_screen(windows *windows) {
             if (i == 0) {
             mvwprintw(windows->win_values, y, 2, "%s", filter_mode[params[i].val]);
             }
-            else if (i == 9) {
+            else if (i == 8) {
                 mvwprintw(windows->win_values, y, 2, "%s", ghosting_mode[params[i].val]);
             }
             else {
@@ -226,7 +225,7 @@ void manage_input(int ch, windows *windows) {
                 break;
         }
     }
-    if (sel <= 13) {
+    if (sel <= NPARAMS - 1) {
         unsigned int mom;
         if (newval >= 0 && newval <= 9) {
             mom = params[sel].val * 10 + newval;
@@ -300,12 +299,6 @@ void manage_input(int ch, windows *windows) {
             }
         }
     }
-    if (params[5].val || params[6].val) {
-            params[7].val = 0;
-    }
-    else {
-        params[7].val = 1;
-    }
     if (cmd) {
         char *loop;
         char *force;
@@ -319,11 +312,11 @@ void manage_input(int ch, windows *windows) {
             force = "";
         }
         snprintf(compose, sizeof(compose), "./ffmpeg %s -i %s -vf \
-        \"granulate=%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u\" %s"\
+        \"granulate=%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u\" %s"\
         , loop ,input, params[0].param, params[0].val, params[1].param, params[1].val, params[2].param, params[2].val\
         , params[3].param, params[3].val, params[4].param, params[4].val, params[5].param, params[5].val, params[6].param, params[6].val\
         , params[7].param, params[7].val, params[8].param, params[8].val, params[9].param, params[9].val, params[10].param, params[10].val\
-        , params[11].param, params[11].val, params[12].param, params[12].val, params[13].param, params[13].val, (live ? force : output));
+        , params[11].param, params[11].val, params[12].param, params[12].val, (live ? force : output));
 
         //c: granulate -1 param value
         
