@@ -88,7 +88,7 @@ typedef struct GranulateContext {
     uint64_t frame_count;
     uint8_t log2_chroma_h, log2_chroma_w;
     unsigned int delay;
-    int delay_set;
+    unsigned int delay_set;
 } GranulateContext;
 
 #define OFFSET(x) offsetof(GranulateContext, x)
@@ -96,7 +96,7 @@ typedef struct GranulateContext {
 #define R AV_OPT_FLAG_RUNTIME_PARAM
 
 static const AVOption granulate_options[] = {
-    {"mode", "set mode", OFFSET(mode), AV_OPT_TYPE_UINT, {.i64=MODE_PIXELS}, MODE_PIXELS, MODE_DITHER, FLAGS | R},
+    {"mode", "set mode", OFFSET(mode), AV_OPT_TYPE_INT, {.i64=MODE_PIXELS}, MODE_PIXELS, MODE_DITHER, FLAGS | R},
     {"zoom", "set zoom amount", OFFSET(zoom_amount), AV_OPT_TYPE_UINT, {.i64=1}, 1, 256, FLAGS | R},
     {"zoom_offset_time", "set number of frames befor zoom offset is reset", OFFSET(zoom_offset_time), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT_MAX, FLAGS | R},
     {"n_grains", "number of grains per frame", OFFSET(n_grains), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT_MAX, FLAGS},
@@ -104,7 +104,7 @@ static const AVOption granulate_options[] = {
     {"grain_w", "set the width of each grain in px", OFFSET(grain_w), AV_OPT_TYPE_UINT, {.i64=0}, 0, 8192, FLAGS},
     {"grain_h", "set the height of each grain in px", OFFSET(grain_h), AV_OPT_TYPE_UINT, {.i64=0}, 0, 8192, FLAGS},
     {"var_size", "toggle random grain size (grain_size as max size)", OFFSET(var_size), AV_OPT_TYPE_BOOL, {.i64=0}, 0, 1, FLAGS},
-    {"ghosting", "select type of ghosting", OFFSET(ghosting), AV_OPT_TYPE_UINT, {.i64=NO_GHOSTING}, NO_GHOSTING, CHROMA_GHOSTING, FLAGS | R},
+    {"ghosting", "select type of ghosting", OFFSET(ghosting), AV_OPT_TYPE_INT, {.i64=NO_GHOSTING}, NO_GHOSTING, CHROMA_GHOSTING, FLAGS | R},
     {"static_grains", "toggle stable grain position", OFFSET(static_grains), AV_OPT_TYPE_BOOL, {.i64=0}, 0, 1, FLAGS},
     {"grains_reset_time","set number of frames before grain_pos reset", OFFSET(grains_reset_time), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT_MAX, FLAGS},
     {"delay", "set number of frames before refresh of delay", OFFSET(delay), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT_MAX, FLAGS | R},
@@ -202,18 +202,19 @@ static int config_props(AVFilterLink *inlink)
         default: 
             return AVERROR(EINVAL);
     }
-        for (int i = 0; i < granulate_ctx->buffer_size; i++) {
-            AVFrame *f = granulate_ctx->fbuffer[i];
 
-            av_frame_unref(f);
-            f->format = inlink->format;
-            f->width  = inlink->w;
-            f->height = inlink->h;
+    for (int i = 0; i < granulate_ctx->buffer_size; i++) {
+        AVFrame *f = granulate_ctx->fbuffer[i];
 
-            int ret = av_frame_get_buffer(f, 0);
-            if (ret < 0)
-                return ret;
-        }
+        av_frame_unref(f);
+        f->format = inlink->format;
+        f->width  = inlink->w;
+        f->height = inlink->h;
+
+        int ret = av_frame_get_buffer(f, 0);
+        if (ret < 0)
+            return ret;
+    }
 
     return 0;
 }
