@@ -33,9 +33,9 @@ Nella root di ffmpeg, mandare comando "./configure" e poi "make".
 
 `grain_w` : larghezza in pixel di ogni grano (int 0 - 8192)
 
-`grain_h` : altezza in pixel di ogni grano  (int 0 - 8192)
+`grain_h` : altezza in pixel di ogni grano  (int 0 - 8192)  
 
-`fullscreen` : toggle larghezza e altezza uguali al frame (int 0 - 1 default)
+*Se w o h sono a zero, il grano sarà fullscreen
 
 `var_size` : larghezza e altezza modificati casualmente, rimanendo nei valori tra 1 e grain_w e grain_h (int 0 - 1)
 
@@ -89,9 +89,9 @@ Go back to ffmpeg root and send command "./configure" and then "make".
 
 `grain_w` : width of each grains in pixels (int 0 - 8192)
 
-`grain_h` : height of each grain in pixels (int 0 - 8192)
+`grain_h` : height of each grain in pixels (int 0 - 8192)  
 
-`fullscreen` : toggle width and height equal to frame size (int 0 - 1 default)
+*If either w or h is 0, the grain will be set to fullscreen
 
 `var_size` : toggle random grain size, uses width and height as max value (int 0 - 1)
 
