@@ -34,6 +34,7 @@
 #include "formats.h"
 #include "video.h"
 #include "error.h"
+#include <limits.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -70,23 +71,23 @@ typedef struct GranulateContext {
     uint32_t seed;
     filter_mode mode;
     ghosting_mode ghosting;
-    int buffer_size, buffer_index, buffer_full;
+    unsigned int buffer_size, buffer_index, buffer_full;
     AVFrame **fbuffer;
-    int zoom_amount, zoom_set;
-    int zoom_offset_w, zoom_offset_h;
-    int zoom_offset_time;
+    unsigned int zoom_amount, zoom_set;
+    unsigned int zoom_offset_w, zoom_offset_h;
+    unsigned int zoom_offset_time;
     copy_grain copy_grain_fn;
-    int grain_w, grain_h;
+    unsigned int grain_w, grain_h;
     int fullscreen;
-    int n_grains;
+    unsigned int n_grains;
     int static_grains;
     GrainPos *grain_pos;
     int grains_set;
-    int grains_reset_time;
+    unsigned int grains_reset_time;
     int var_size;
     uint64_t frame_count;
     uint8_t log2_chroma_h, log2_chroma_w;
-    int delay;
+    unsigned int delay;
     int delay_set;
 } GranulateContext;
 
@@ -97,17 +98,17 @@ typedef struct GranulateContext {
 static const AVOption granulate_options[] = {
     {"mode", "set mode", OFFSET(mode), AV_OPT_TYPE_UINT, {.i64=MODE_PIXELS}, MODE_PIXELS, MODE_DITHER, FLAGS | R},
     {"zoom", "set zoom amount", OFFSET(zoom_amount), AV_OPT_TYPE_UINT, {.i64=1}, 1, 256, FLAGS | R},
-    {"zoom_offset_time", "set number of frames befor zoom offset is reset", OFFSET(zoom_offset_time), AV_OPT_TYPE_UINT64, {.i64=0}, 0, UINT64_MAX, FLAGS | R},
-    {"n_grains", "number of grains per frame", OFFSET(n_grains), AV_OPT_TYPE_UINT64, {.i64=0}, 0, UINT64_MAX, FLAGS},
+    {"zoom_offset_time", "set number of frames befor zoom offset is reset", OFFSET(zoom_offset_time), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT64_MAX, FLAGS | R},
+    {"n_grains", "number of grains per frame", OFFSET(n_grains), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT_MAX, FLAGS},
     {"buffer", "set the size of the buffer", OFFSET(buffer_size), AV_OPT_TYPE_UINT, {.i64=1}, 1, 8192, FLAGS},
     {"grain_w", "set the width of each grain in px", OFFSET(grain_w), AV_OPT_TYPE_UINT, {.i64=0}, 0, 8192, FLAGS},
     {"grain_h", "set the height of each grain in px", OFFSET(grain_h), AV_OPT_TYPE_UINT, {.i64=0}, 0, 8192, FLAGS},
     {"fullscreen", "set grain size equal to frame size", OFFSET(fullscreen), AV_OPT_TYPE_BOOL, {.i64=1}, 0, 1, FLAGS},
     {"var_size", "toggle random grain size (grain_size as max size)", OFFSET(var_size), AV_OPT_TYPE_BOOL, {.i64=0}, 0, 1, FLAGS},
-    {"ghosting", "select type of ghosting", OFFSET(ghosting), AV_OPT_TYPE_INT, {.i64=NO_GHOSTING}, NO_GHOSTING, CHROMA_GHOSTING, FLAGS | R},
+    {"ghosting", "select type of ghosting", OFFSET(ghosting), AV_OPT_TYPE_UINT, {.i64=NO_GHOSTING}, NO_GHOSTING, CHROMA_GHOSTING, FLAGS | R},
     {"static_grains", "toggle stable grain position", OFFSET(static_grains), AV_OPT_TYPE_BOOL, {.i64=0}, 0, 1, FLAGS},
-    {"grains_reset_time","set number of frames before grain_pos reset", OFFSET(grains_reset_time), AV_OPT_TYPE_UINT64, {.i64=0}, 0, UINT64_MAX, FLAGS},
-    {"delay", "set number of frames before refresh of delay", OFFSET(delay), AV_OPT_TYPE_UINT, {.i64=0}, 0, 8192, FLAGS | R},
+    {"grains_reset_time","set number of frames before grain_pos reset", OFFSET(grains_reset_time), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT_MAX, FLAGS},
+    {"delay", "set number of frames before refresh of delay", OFFSET(delay), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT_MAX, FLAGS | R},
     {"seed", "set seed for AVlfg", OFFSET(seed), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT32_MAX, FLAGS},
     { NULL }
 };

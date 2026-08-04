@@ -25,9 +25,9 @@ const static char *ghosting_mode[] = {
 #define OUTPUT (NPARAMS + 1)
 
 typedef struct granulate_params { 
-    uint64_t val;
-    uint64_t min;
-    uint64_t max;
+    unsigned int val;
+    unsigned int min;
+    unsigned int max;
     const char *param;
 } granulate_params;
 
@@ -42,8 +42,8 @@ typedef struct windows {
 static granulate_params params[NPARAMS] = {
     {0, 0, 3, "mode"},
     {1, 1, 256, "zoom"},
-    {0, 0, UINT64_MAX, "zoom_offset_time"},
-    {0, 0, UINT64_MAX, "n_grains"},
+    {0, 0, UINT32_MAX, "zoom_offset_time"},
+    {0, 0, UINT32_MAX, "n_grains"},
     {1, 1, 8192, "buffer"},
     {0, 0, 8192, "grain_w"},
     {0, 0, 8192, "grain_h"},
@@ -51,7 +51,7 @@ static granulate_params params[NPARAMS] = {
     {0, 0, 1, "var_size"},
     {0, 0, 2, "ghosting"},
     {0, 0, 1, "static_grains"},
-    {0, 0, UINT64_MAX, "grains_reset_time"},
+    {0, 0, UINT32_MAX, "grains_reset_time"},
     {0, 0, 8192, "delay"},
     {0, 0, UINT32_MAX, "seed"}
 };
@@ -127,7 +127,7 @@ static void draw_screen(windows *windows) {
             }
             else {
             wattron(windows->win_values, A_STANDOUT);
-            mvwprintw(windows->win_values, y, 2, "%lu", params[i].val);
+            mvwprintw(windows->win_values, y, 2, "%u", params[i].val);
             wattroff(windows->win_values, A_STANDOUT);
             }
         }
@@ -140,7 +140,7 @@ static void draw_screen(windows *windows) {
                 mvwprintw(windows->win_values, y, 2, "%s", ghosting_mode[params[i].val]);
             }
             else {
-            mvwprintw(windows->win_values, y, 2, "%lu", params[i].val);
+            mvwprintw(windows->win_values, y, 2, "%u", params[i].val);
             }
         }
     }
@@ -227,7 +227,7 @@ void manage_input(int ch, windows *windows) {
         }
     }
     if (sel <= 13) {
-        int mom;
+        unsigned int mom;
         if (newval >= 0 && newval <= 9) {
             mom = params[sel].val * 10 + newval;
             if (mom <= params[sel].max)
@@ -319,7 +319,7 @@ void manage_input(int ch, windows *windows) {
             force = "";
         }
         snprintf(compose, sizeof(compose), "./ffmpeg %s -i %s -vf \
-        \"granulate=%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu:%s=%lu\" %s"\
+        \"granulate=%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u:%s=%u\" %s"\
         , loop ,input, params[0].param, params[0].val, params[1].param, params[1].val, params[2].param, params[2].val\
         , params[3].param, params[3].val, params[4].param, params[4].val, params[5].param, params[5].val, params[6].param, params[6].val\
         , params[7].param, params[7].val, params[8].param, params[8].val, params[9].param, params[9].val, params[10].param, params[10].val\
