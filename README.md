@@ -25,7 +25,7 @@ Nella root di ffmpeg, mandare comando "./configure" e poi "make".
 
 `zoom` : zoom sul grano (int 1 - 256)
 
-`zoom_offset_time` : numero di frame per i quali l'offset sul grano zoomato rimane fisso (int 0 - MAX)
+`offset_time` : numero di frame per i quali l'offset sul grano zoomato rimane fisso (int 0 - MAX)
 
 `n_grains` : numero di grani per frame (int 0 - MAX)
 
@@ -46,7 +46,7 @@ Nella root di ffmpeg, mandare comando "./configure" e poi "make".
 
 `static_grains` : toggle per fissare ogni grano a delle coordinate specifiche (int 0 - 1)
 
-`grains_reset_time` : numero di frame prima del reset delle coordinate fisse (int 0 - MAX)
+`reset_time` : numero di frame prima del reset delle coordinate fisse (int 0 - MAX)
 
 `delay` : numero di frame per il quale mantenere un delay fisso nel buffer (int 0 default - 8162)
 
@@ -81,7 +81,7 @@ Go back to ffmpeg root and send command "./configure" and then "make".
 
 `zoom` : in-grain-zoom (int 1 - 256)
 
-`zoom_offset_time` : number of frames before the offset of the zoom is reset (int 0 - MAX)  
+`offset_time` : number of frames before the offset of the zoom is reset (int 0 - MAX)  
 
 `n_grains` : number of grains per frame (int 0 - MAX)  
 
@@ -102,7 +102,7 @@ Go back to ffmpeg root and send command "./configure" and then "make".
 
 `static_grains` : toggle to fix each grain to specific coordinates (int 0 - 1)
 
-`grains_reset_time` : number of frames before the fixed grain position is reset (int 0 - MAX)
+`reset_time` : number of frames before the fixed grain position is reset (int 0 - MAX)
 
 `delay` : number of frames before refresh of fixed buffer delay (int 0 default - 8192)
 

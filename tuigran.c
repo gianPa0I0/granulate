@@ -42,7 +42,7 @@ typedef struct windows {
 static granulate_params params[NPARAMS] = {
     {0, 0, 3, "mode"},
     {1, 1, 256, "zoom"},
-    {0, 0, UINT32_MAX, "zoom_offset_time"},
+    {0, 0, UINT32_MAX, "offset_time"},
     {0, 0, UINT32_MAX, "n_grains"},
     {1, 1, 8192, "buffer"},
     {0, 0, 8192, "grain_w"},
@@ -50,7 +50,7 @@ static granulate_params params[NPARAMS] = {
     {0, 0, 1, "var_size"},
     {0, 0, 2, "ghosting"},
     {0, 0, 1, "static_grains"},
-    {0, 0, UINT32_MAX, "grains_reset_time"},
+    {0, 0, UINT32_MAX, "reset_time"},
     {0, 0, 8192, "delay"},
     {0, 0, UINT32_MAX, "seed"}
 };
