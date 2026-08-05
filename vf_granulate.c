@@ -305,22 +305,18 @@ static void copy_grain_YUV(const AVFrame *dst, const AVFrame *src, int sx, int s
 
     else if (mode == MODE_INTERLACED_H) {
         if (ghosting != 2) {
-            for (int row = 0; row < grain_h; row++) {
-                if (!(row % 2)) {
-                    for (int col = 0; col < grain_w; col++) {
-                        copy_px_Y(dst, src, sx, sy, dx, dy, zoom, col, row);
-                    }
+            for (int row = 0; row < grain_h; row += 2) {
+                for (int col = 0; col < grain_w; col++) {
+                    copy_px_Y(dst, src, sx, sy, dx, dy, zoom, col, row);
                 }
             }
         }
 
         if (ghosting != 1) {
-            for (int row = 0; row < grain_h_chroma; row++) {
-                if (!(row % 2)) {
-                    for (int col = 0; col < grain_w_chroma; col++) {
-                        copy_px_U(dst, src, sx_chroma, sy_chroma, dx_chroma, dy_chroma, zoom, col, row);
-                        copy_px_V(dst, src, sx_chroma, sy_chroma, dx_chroma, dy_chroma, zoom, col, row);
-                    }
+            for (int row = 0; row < grain_h_chroma; row += 2) {
+                for (int col = 0; col < grain_w_chroma; col++) {
+                    copy_px_U(dst, src, sx_chroma, sy_chroma, dx_chroma, dy_chroma, zoom, col, row);
+                    copy_px_V(dst, src, sx_chroma, sy_chroma, dx_chroma, dy_chroma, zoom, col, row);
                 }
             }
         }
@@ -329,21 +325,17 @@ static void copy_grain_YUV(const AVFrame *dst, const AVFrame *src, int sx, int s
     else if (mode == MODE_INTERLACED_V) {
         if (ghosting != 2) {
             for (int row = 0; row < grain_h; row++) {
-                for (int col = 0; col < grain_w; col++) {
-                    if (!(col % 2)) {
-                        copy_px_Y(dst, src, sx, sy, dx, dy, zoom, col, row);
-                    }
+                for (int col = 0; col < grain_w; col += 2) {
+                    copy_px_Y(dst, src, sx, sy, dx, dy, zoom, col, row);
                 }
             }
         }
 
         if (ghosting != 1) {
             for (int row = 0; row < grain_h_chroma; row++) {
-                for (int col = 0; col < grain_w_chroma; col++) {
-                    if (!(col % 2)) {
-                        copy_px_U(dst, src, sx_chroma, sy_chroma, dx_chroma, dy_chroma, zoom, col, row);
-                        copy_px_V(dst, src, sx_chroma, sy_chroma, dx_chroma, dy_chroma, zoom, col, row);
-                    }
+                for (int col = 0; col < grain_w_chroma; col += 2) {
+                    copy_px_U(dst, src, sx_chroma, sy_chroma, dx_chroma, dy_chroma, zoom, col, row);
+                    copy_px_V(dst, src, sx_chroma, sy_chroma, dx_chroma, dy_chroma, zoom, col, row);
                 }
             }
         }
@@ -353,7 +345,7 @@ static void copy_grain_YUV(const AVFrame *dst, const AVFrame *src, int sx, int s
         if (ghosting != 2) {
             for (int row = 0; row < grain_h; row++) {
                 for (int col = 0; col < grain_w; col++) {
-                    if (av_lfg_get(lfg) % 2)
+                    if (av_lfg_get(lfg) & 1)
                         copy_px_Y(dst, src, sx, sy, dx, dy, zoom, col, row);
                 }
             }
@@ -362,7 +354,7 @@ static void copy_grain_YUV(const AVFrame *dst, const AVFrame *src, int sx, int s
         if (ghosting != 1) {
             for (int row = 0; row < grain_h_chroma; row++) {
                 for (int col = 0; col < grain_w_chroma; col++) {
-                    if (av_lfg_get(lfg) % 2) {
+                    if (av_lfg_get(lfg) & 1) {
                         copy_px_U(dst, src, sx_chroma, sy_chroma, dx_chroma, dy_chroma, zoom, col, row);
                         copy_px_V(dst, src, sx_chroma, sy_chroma, dx_chroma, dy_chroma, zoom, col, row);
                     }
@@ -390,21 +382,17 @@ static void copy_grain_GRAY(const AVFrame *dst, const AVFrame *src, int sx, int 
     }
 
     else if (mode == MODE_INTERLACED_H) {
-        for (int row = 0; row < grain_h; row++) {
-            if (!(row % 2)) {
-                for (int col = 0; col < grain_w; col++) {
-                    copy_px_Y(dst, src, sx, sy, dx, dy, zoom, col, row);
-                }
+        for (int row = 0; row < grain_h; row += 2) {
+            for (int col = 0; col < grain_w; col++) {
+                copy_px_Y(dst, src, sx, sy, dx, dy, zoom, col, row);
             }
         }
     }
 
     else if (mode == MODE_INTERLACED_V) {
         for (int row = 0; row < grain_h; row++) {
-            for (int col = 0; col < grain_w; col++) {
-                if (!(col % 2)) {
-                    copy_px_Y(dst, src, sx, sy, dx, dy, zoom, col, row);
-                }
+            for (int col = 0; col < grain_w; col += 2) {
+                copy_px_Y(dst, src, sx, sy, dx, dy, zoom, col, row);
             }
         }
         
@@ -413,7 +401,7 @@ static void copy_grain_GRAY(const AVFrame *dst, const AVFrame *src, int sx, int 
     else if (mode == MODE_DITHER) {
         for (int row = 0; row < grain_h; row++) {
             for (int col = 0; col < grain_w; col++) {
-                if (av_lfg_get(lfg) % 2)
+                if (av_lfg_get(lfg) & 1)
                     copy_px_Y(dst, src, sx, sy, dx, dy, zoom, col, row);
             }
         }
@@ -433,11 +421,12 @@ static void copy_grain_RGB(const AVFrame *dst, const AVFrame *src, int sx, int s
         if (ghosting) {
             for (int row = 0; row < grain_h; row++) {
                 for (int col = 0; col < grain_w; col++) {
-                    if (av_lfg_get(lfg) % 2)
+                    uint32_t r = av_lfg_get(lfg);
+                    if (r & 2)
                         copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
-                    if (av_lfg_get(lfg) % 2)
+                    if (r & 4)
                         copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
-                    if (av_lfg_get(lfg) % 2)
+                    if (r & 8)
                         copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);       
                 }
             }
@@ -456,27 +445,24 @@ static void copy_grain_RGB(const AVFrame *dst, const AVFrame *src, int sx, int s
 
     else if (mode == MODE_INTERLACED_H) {
         if (ghosting) {
-            for (int row = 0; row < grain_h; row++) {
-                if (!(row % 2)) {
-                    for (int col = 0; col < grain_w; col++) {
-                        if (av_lfg_get(lfg) % 2)
-                            copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
-                        if (av_lfg_get(lfg) % 2)
-                            copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
-                        if (av_lfg_get(lfg) % 2)
-                            copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);  
-                    }
+            for (int row = 0; row < grain_h; row += 2) {
+                for (int col = 0; col < grain_w; col++) {
+                    uint32_t r = av_lfg_get(lfg);
+                    if (r & 2)
+                        copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
+                    if (r & 4)
+                        copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
+                    if (r & 8)
+                        copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);  
                 }
             }
         }
         else {
-            for (int row = 0; row < grain_h; row++) {
-                if (!(row % 2)) {
-                    for (int col = 0; col < grain_w; col++) {
-                        copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
-                        copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
-                        copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);
-                    }
+            for (int row = 0; row < grain_h; row += 2) {
+                for (int col = 0; col < grain_w; col++) {
+                    copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
+                    copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
+                    copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);
                 }
             }
         }
@@ -485,26 +471,23 @@ static void copy_grain_RGB(const AVFrame *dst, const AVFrame *src, int sx, int s
     else if (mode == MODE_INTERLACED_V) {
         if (ghosting) {
             for (int row = 0; row < grain_h; row++) {
-                for (int col = 0; col < grain_w; col++) {
-                    if (!(col % 2)) {
-                        if (av_lfg_get(lfg) % 2)
-                            copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
-                        if (av_lfg_get(lfg) % 2)
-                            copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
-                        if (av_lfg_get(lfg) % 2)
-                            copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);
-                    }
+                for (int col = 0; col < grain_w; col += 2) {
+                    uint32_t r = av_lfg_get(lfg);
+                    if (r & 2)
+                        copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
+                    if (r & 4)
+                        copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
+                    if (r & 8)
+                        copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);
                 }
             }
         }
         else {
             for (int row = 0; row < grain_h; row++) {
-                for (int col = 0; col < grain_w; col++) {
-                    if (!(col % 2)) {
-                        copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
-                        copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
-                        copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);
-                    }
+                for (int col = 0; col < grain_w; col += 2) {
+                    copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
+                    copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
+                    copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);
                 }
             }
         }
@@ -514,19 +497,22 @@ static void copy_grain_RGB(const AVFrame *dst, const AVFrame *src, int sx, int s
         if (ghosting) {
             for (int row = 0; row < grain_h; row++) {
                 for (int col = 0; col < grain_w; col++) {
-                    if (av_lfg_get(lfg) % 2)
-                        copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
-                    if (av_lfg_get(lfg) % 2)
-                        copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
-                    if (av_lfg_get(lfg) % 2)
-                        copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);
+                    uint32_t r = av_lfg_get(lfg);
+                    if (r & 1) {
+                        if (r & 2)
+                            copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
+                        if (r & 4)
+                            copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
+                        if (r & 8)
+                            copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);
+                    }
                 }
             }
         }
         else {
             for (int row = 0; row < grain_h; row++) {
                 for (int col = 0; col < grain_w; col++) {
-                    if (av_lfg_get(lfg) % 2) {
+                    if (av_lfg_get(lfg) & 1) {
                         copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
                         copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
                         copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);
