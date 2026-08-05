@@ -25,6 +25,7 @@
  */
 
 #include "avfilter.h"
+#include "libavutil/attributes.h"
 #include "libavutil/frame.h"
 #include "libavutil/mem.h"
 #include "libavutil/opt.h"
@@ -219,29 +220,18 @@ static int config_props(AVFilterLink *inlink)
     return 0;
 }
 
-static av_always_inline void copy_px_Y(const AVFrame *dst, const AVFrame *src, int sx, int sy, int dx, int dy, int zoom, int col, int row) {
-    dst->data[0][(dy + row) * dst->linesize[0] + (dx + col)] = src->data[0][(sy + row / zoom) * src->linesize[0] + (sx + col / zoom)];
+static av_always_inline void copy_px_data0(const AVFrame *dst, const AVFrame *src, int d_row_offset, int s_row_offset, int d_col_offset,int s_col_offset) {
+    dst->data[0][d_row_offset * dst->linesize[0] + d_col_offset] = src->data[0][s_row_offset * src->linesize[0] + s_col_offset];
 }
 
-static av_always_inline void copy_px_U(const AVFrame *dst, const AVFrame *src, int sx, int sy, int dx, int dy, int zoom, int col, int row) {
-    dst->data[1][(dy + row) * dst->linesize[1] + (dx + col)] = src->data[1][(sy + row / zoom) * src->linesize[1] + (sx + col / zoom)];
+static av_always_inline void copy_px_data1(const AVFrame *dst, const AVFrame *src, int d_row_offset, int s_row_offset, int d_col_offset,int s_col_offset) {
+    dst->data[1][d_row_offset * dst->linesize[1] + d_col_offset] = src->data[1][s_row_offset * src->linesize[1] + s_col_offset];
 }
 
-static av_always_inline void copy_px_V(const AVFrame *dst, const AVFrame *src, int sx, int sy, int dx, int dy, int zoom, int col, int row) {
-    dst->data[2][(dy + row) * dst->linesize[2] + (dx + col)] = src->data[2][(sy + row / zoom) * src->linesize[2] + (sx + col / zoom)];
+static av_always_inline void copy_px_data2(const AVFrame *dst, const AVFrame *src, int d_row_offset, int s_row_offset, int d_col_offset,int s_col_offset) {
+    dst->data[2][d_row_offset * dst->linesize[2] + d_col_offset] = src->data[2][s_row_offset * src->linesize[2] + s_col_offset];
 }
 
-static av_always_inline void copy_px_C1(const AVFrame *dst, const AVFrame *src, int sx, int sy, int dx, int dy, int zoom, int col, int row) {
-    dst->data[0][(dy + row) * dst->linesize[0] + (dx + col * 3)] = src->data[0][(sy + row / zoom) * src->linesize[0] + (sx + col / zoom * 3)];
-}
-
-static av_always_inline void copy_px_C2(const AVFrame *dst, const AVFrame *src, int sx, int sy, int dx, int dy, int zoom, int col, int row) {
-    dst->data[0][(dy + row) * dst->linesize[0] + (dx + col * 3 + 1)] = src->data[0][(sy + row / zoom) * src->linesize[0] + (sx + col / zoom * 3 + 1)];
-}
-
-static av_always_inline void copy_px_C3(const AVFrame *dst, const AVFrame *src, int sx, int sy, int dx, int dy, int zoom, int col, int row) {
-    dst->data[0][(dy + row) * dst->linesize[0] + (dx + col * 3 + 2)] = src->data[0][(sy + row / zoom) * src->linesize[0] + (sx + col / zoom * 3 + 2)];
-}
 
 static void copy_grain_YUV(const AVFrame *dst, const AVFrame *src, int sx, int sy, int dx, int dy,
                             int grain_w, int grain_h, filter_mode mode, ghosting_mode ghosting, 
@@ -284,79 +274,50 @@ static void copy_grain_YUV(const AVFrame *dst, const AVFrame *src, int sx, int s
         dy_chroma = dy;
     }
 
-    if (mode == MODE_PIXELS) {
-        if (ghosting != 2) {
-            for (int row = 0; row < grain_h; row++) {
-                for (int col = 0; col < grain_w; col++) {
-                    copy_px_Y(dst, src, sx, sy, dx, dy, zoom, col, row);
-                }
-            }
-        }
+    int row_step = 1;
+    int col_step = 1;
 
-        if (ghosting != 1) {
-            for (int row = 0; row < grain_h_chroma; row++) {
-                for (int col = 0; col < grain_w_chroma; col++) {
-                    copy_px_U(dst, src, sx_chroma, sy_chroma, dx_chroma, dy_chroma, zoom, col, row);
-                    copy_px_V(dst, src, sx_chroma, sy_chroma, dx_chroma, dy_chroma, zoom, col, row);
-                }
-            }
-        }
-    }
+    if (mode == MODE_INTERLACED_H)
+        row_step = 2;
 
-    else if (mode == MODE_INTERLACED_H) {
-        if (ghosting != 2) {
-            for (int row = 0; row < grain_h; row += 2) {
-                for (int col = 0; col < grain_w; col++) {
-                    copy_px_Y(dst, src, sx, sy, dx, dy, zoom, col, row);
-                }
-            }
-        }
+    if (mode == MODE_INTERLACED_V)
+        col_step = 2;
+    
+    int d_row_offset, d_col_offset;
+    int s_row_offset, s_col_offset;
 
-        if (ghosting != 1) {
-            for (int row = 0; row < grain_h_chroma; row += 2) {
-                for (int col = 0; col < grain_w_chroma; col++) {
-                    copy_px_U(dst, src, sx_chroma, sy_chroma, dx_chroma, dy_chroma, zoom, col, row);
-                    copy_px_V(dst, src, sx_chroma, sy_chroma, dx_chroma, dy_chroma, zoom, col, row);
+    if (ghosting != 2) {
+        for (int row = 0; row < grain_h; row += row_step) {
+            d_row_offset = dy + row;
+            s_row_offset = sy + row / zoom;
+            for (int col = 0; col < grain_w; col += col_step) {
+                d_col_offset = dx + col;
+                s_col_offset = sx + col / zoom;
+                if (mode != MODE_DITHER) {
+                    copy_px_data0(dst, src, d_row_offset, s_row_offset, d_col_offset, s_col_offset);
                 }
-            }
-        }
-    }
-
-    else if (mode == MODE_INTERLACED_V) {
-        if (ghosting != 2) {
-            for (int row = 0; row < grain_h; row++) {
-                for (int col = 0; col < grain_w; col += 2) {
-                    copy_px_Y(dst, src, sx, sy, dx, dy, zoom, col, row);
-                }
-            }
-        }
-
-        if (ghosting != 1) {
-            for (int row = 0; row < grain_h_chroma; row++) {
-                for (int col = 0; col < grain_w_chroma; col += 2) {
-                    copy_px_U(dst, src, sx_chroma, sy_chroma, dx_chroma, dy_chroma, zoom, col, row);
-                    copy_px_V(dst, src, sx_chroma, sy_chroma, dx_chroma, dy_chroma, zoom, col, row);
-                }
-            }
-        }
-    }
-
-    else if (mode == MODE_DITHER) {
-        if (ghosting != 2) {
-            for (int row = 0; row < grain_h; row++) {
-                for (int col = 0; col < grain_w; col++) {
+                else {
                     if (av_lfg_get(lfg) & 1)
-                        copy_px_Y(dst, src, sx, sy, dx, dy, zoom, col, row);
+                        copy_px_data0(dst, src, d_row_offset, s_row_offset, d_col_offset, s_col_offset);
                 }
             }
         }
-
-        if (ghosting != 1) {
-            for (int row = 0; row < grain_h_chroma; row++) {
-                for (int col = 0; col < grain_w_chroma; col++) {
+    }
+    if (ghosting != 1) {
+        for (int row = 0; row < grain_h_chroma; row += row_step) {
+            d_row_offset = dy_chroma + row;
+            s_row_offset = sy_chroma + row / zoom;
+            for (int col = 0; col < grain_w_chroma; col += col_step) {
+                d_col_offset = dx_chroma + col;
+                s_col_offset = sx_chroma + col / zoom;
+                if (mode != MODE_DITHER) {
+                    copy_px_data1(dst, src, d_row_offset, s_row_offset, d_col_offset, s_col_offset);
+                    copy_px_data2(dst, src, d_row_offset, s_row_offset, d_col_offset, s_col_offset);
+                }
+                else {
                     if (av_lfg_get(lfg) & 1) {
-                        copy_px_U(dst, src, sx_chroma, sy_chroma, dx_chroma, dy_chroma, zoom, col, row);
-                        copy_px_V(dst, src, sx_chroma, sy_chroma, dx_chroma, dy_chroma, zoom, col, row);
+                        copy_px_data1(dst, src, d_row_offset, s_row_offset, d_col_offset, s_col_offset);
+                        copy_px_data2(dst, src, d_row_offset, s_row_offset, d_col_offset, s_col_offset);
                     }
                 }
             }
@@ -373,39 +334,34 @@ static void copy_grain_GRAY(const AVFrame *dst, const AVFrame *src, int sx, int 
         grain_w = av_lfg_get(lfg) % (grain_w + 1);
     }
 
-    if (mode == MODE_PIXELS) {
-        for (int row = 0; row < grain_h; row++) {
-            for (int col = 0; col < grain_w; col++) {
-                copy_px_Y(dst, src, sx, sy, dx, dy, zoom, col, row);
-            }
-        }
-    }
+    int row_step = 1;
+    int col_step = 1;
 
-    else if (mode == MODE_INTERLACED_H) {
-        for (int row = 0; row < grain_h; row += 2) {
-            for (int col = 0; col < grain_w; col++) {
-                copy_px_Y(dst, src, sx, sy, dx, dy, zoom, col, row);
-            }
-        }
-    }
+    if (mode == MODE_INTERLACED_H)
+        row_step = 2;
 
-    else if (mode == MODE_INTERLACED_V) {
-        for (int row = 0; row < grain_h; row++) {
-            for (int col = 0; col < grain_w; col += 2) {
-                copy_px_Y(dst, src, sx, sy, dx, dy, zoom, col, row);
-            }
-        }
-        
-    }
+    if (mode == MODE_INTERLACED_V)
+        col_step = 2;
+    
+    int d_row_offset, d_col_offset;
+    int s_row_offset, s_col_offset;
 
-    else if (mode == MODE_DITHER) {
-        for (int row = 0; row < grain_h; row++) {
-            for (int col = 0; col < grain_w; col++) {
+    for (int row = 0; row < grain_h; row += row_step) {
+        d_row_offset = dy + row;
+        s_row_offset = sy + row / zoom;
+        for (int col = 0; col < grain_w; col += col_step) {
+            d_col_offset = dx + col;
+            s_col_offset = sx + col / zoom;
+            if (mode != MODE_DITHER) {
+                copy_px_data0(dst, src, d_row_offset, s_row_offset, d_col_offset, s_col_offset);
+            }
+            else {
                 if (av_lfg_get(lfg) & 1)
-                    copy_px_Y(dst, src, sx, sy, dx, dy, zoom, col, row);
+                    copy_px_data0(dst, src, d_row_offset, s_row_offset, d_col_offset, s_col_offset);
             }
         }
     }
+
 }
 
 static void copy_grain_RGB(const AVFrame *dst, const AVFrame *src, int sx, int sy, int dx, int dy,
@@ -417,105 +373,60 @@ static void copy_grain_RGB(const AVFrame *dst, const AVFrame *src, int sx, int s
         grain_w = av_lfg_get(lfg) % (grain_w + 1);
     }
 
-    if (mode == MODE_PIXELS) {
-        if (ghosting) {
-            for (int row = 0; row < grain_h; row++) {
-                for (int col = 0; col < grain_w; col++) {
+    int row_step = 1;
+    int col_step = 1;
+
+    if (mode == MODE_INTERLACED_H)
+        row_step = 2;
+
+    if (mode == MODE_INTERLACED_V)
+        col_step = 2;
+    
+    int d_row_offset, s_row_offset;
+    int d1_col_offset, d2_col_offset, d3_col_offset;
+    int s1_col_offset, s2_col_offset, s3_col_offset;
+
+    for (int row = 0; row < grain_h; row += row_step) {
+        d_row_offset = dy + row;
+        s_row_offset = sy + row / zoom;
+        for (int col = 0; col < grain_w; col += col_step) {
+            d1_col_offset = dx + col * 3;
+            s1_col_offset = sx + col / zoom * 3;
+            d2_col_offset = dx + col * 3 + 1;
+            s2_col_offset = sx + col / zoom * 3 + 1;
+            d3_col_offset = dx + col * 3 + 2;
+            s3_col_offset = sx + col / zoom * 3 + 2;
+            if (mode != MODE_DITHER) {
+                if (!ghosting) {
+                    copy_px_data0(dst, src, d_row_offset, s_row_offset, d1_col_offset, s1_col_offset);
+                    copy_px_data0(dst, src, d_row_offset, s_row_offset, d2_col_offset, s2_col_offset);
+                    copy_px_data0(dst, src, d_row_offset, s_row_offset, d3_col_offset, s3_col_offset);
+                }
+                else {
                     uint32_t r = av_lfg_get(lfg);
                     if (r & 2)
-                        copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
+                        copy_px_data0(dst, src, d_row_offset, s_row_offset, d1_col_offset, s1_col_offset);
                     if (r & 4)
-                        copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
+                        copy_px_data0(dst, src, d_row_offset, s_row_offset, d2_col_offset, s2_col_offset);
                     if (r & 8)
-                        copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);       
+                        copy_px_data0(dst, src, d_row_offset, s_row_offset, d3_col_offset, s3_col_offset);
                 }
             }
-        }
-        
-        else {
-            for (int row = 0; row < grain_h; row++) {
-                for (int col = 0; col < grain_w; col++) {
-                        copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
-                        copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
-                        copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);     
-                }
-            }
-        }
-    }
-
-    else if (mode == MODE_INTERLACED_H) {
-        if (ghosting) {
-            for (int row = 0; row < grain_h; row += 2) {
-                for (int col = 0; col < grain_w; col++) {
-                    uint32_t r = av_lfg_get(lfg);
-                    if (r & 2)
-                        copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
-                    if (r & 4)
-                        copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
-                    if (r & 8)
-                        copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);  
-                }
-            }
-        }
-        else {
-            for (int row = 0; row < grain_h; row += 2) {
-                for (int col = 0; col < grain_w; col++) {
-                    copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
-                    copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
-                    copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);
-                }
-            }
-        }
-    }
-
-    else if (mode == MODE_INTERLACED_V) {
-        if (ghosting) {
-            for (int row = 0; row < grain_h; row++) {
-                for (int col = 0; col < grain_w; col += 2) {
-                    uint32_t r = av_lfg_get(lfg);
-                    if (r & 2)
-                        copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
-                    if (r & 4)
-                        copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
-                    if (r & 8)
-                        copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);
-                }
-            }
-        }
-        else {
-            for (int row = 0; row < grain_h; row++) {
-                for (int col = 0; col < grain_w; col += 2) {
-                    copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
-                    copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
-                    copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);
-                }
-            }
-        }
-    }
-
-    else if (mode == MODE_DITHER) {
-        if (ghosting) {
-            for (int row = 0; row < grain_h; row++) {
-                for (int col = 0; col < grain_w; col++) {
-                    uint32_t r = av_lfg_get(lfg);
-                    if (r & 1) {
+            else {
+                uint32_t r = av_lfg_get(lfg);
+                if (r & 1) {
+                    if (!ghosting) {
+                        copy_px_data0(dst, src, d_row_offset, s_row_offset, d1_col_offset, s1_col_offset);
+                        copy_px_data0(dst, src, d_row_offset, s_row_offset, d2_col_offset, s2_col_offset);
+                        copy_px_data0(dst, src, d_row_offset, s_row_offset, d3_col_offset, s3_col_offset);
+                        }
+                    else {
                         if (r & 2)
-                            copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
+                            copy_px_data0(dst, src, d_row_offset, s_row_offset, d1_col_offset, s1_col_offset);
                         if (r & 4)
-                            copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
+                            copy_px_data0(dst, src, d_row_offset, s_row_offset, d2_col_offset, s2_col_offset);
                         if (r & 8)
-                            copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);
-                    }
-                }
-            }
-        }
-        else {
-            for (int row = 0; row < grain_h; row++) {
-                for (int col = 0; col < grain_w; col++) {
-                    if (av_lfg_get(lfg) & 1) {
-                        copy_px_C1(dst, src, sx, sy, dx, dy, zoom, col, row);
-                        copy_px_C2(dst, src, sx, sy, dx, dy, zoom, col, row);
-                        copy_px_C3(dst, src, sx, sy, dx, dy, zoom, col, row);
+                            copy_px_data0(dst, src, d_row_offset, s_row_offset, d3_col_offset, s3_col_offset);
                     }
                 }
             }
