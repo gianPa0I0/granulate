@@ -290,7 +290,7 @@ static void copy_grain_YUV(AVFrame *dst, const AVFrame *src, int sx, int sy, int
     int d_row_offset, d_col_offset;
     int s_row_offset, s_col_offset;
 
-    if (ghosting != 2) {
+    if (ghosting != CHROMA_GHOSTING) {
         for (int row = 0; row < grain_h; row += row_step) {
             d_row_offset = dy + row;
             s_row_offset = sy + row / zoom;
@@ -307,7 +307,7 @@ static void copy_grain_YUV(AVFrame *dst, const AVFrame *src, int sx, int sy, int
             }
         }
     }
-    if (ghosting != 1) {
+    if (ghosting != LUMA_GHOSTING) {
         for (int row = 0; row < grain_h_chroma; row += row_step) {
             d_row_offset = dy_chroma + row;
             s_row_offset = sy_chroma + row / zoom;

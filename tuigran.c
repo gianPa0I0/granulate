@@ -356,7 +356,7 @@ int main(int argc, char *argv[]) {
     printf("Executing Command, ^c to Halt\n");
     system(compose);
 
-    printf("Press any button to exit\n");
+    printf("Press ENTER to exit\n");
     getchar();
     return 0;
 }
