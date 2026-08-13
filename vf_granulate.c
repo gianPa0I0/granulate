@@ -57,8 +57,8 @@ typedef enum GhostingMode {
     CHROMA_GHOSTING
 } ghosting_mode;
 
-typedef void (*copy_grain)(AVFrame *dst, const AVFrame *src, int sx, int sy, int dx, int dy, 
-                            int w, int h, filter_mode mode, ghosting_mode ghosting, int zoom, int var_size, 
+typedef void (*copy_grain)(AVFrame *dst, const AVFrame *src, int sx, int sy, int dx, int dy,
+                            int w, int h, filter_mode mode, ghosting_mode ghosting, int zoom, int var_size,
                             int pix_fmt, uint8_t log2_chroma_h, uint8_t log2_chroma_w, AVLFG *lfg);
 
 typedef struct GrainPos {
@@ -103,7 +103,7 @@ typedef struct GranulateContext {
 static const AVOption granulate_options[] = {
     {"mode", "set mode", OFFSET(mode), AV_OPT_TYPE_INT, {.i64=MODE_PIXELS}, MODE_PIXELS, MODE_DITHER, FLAGS | R},
     {"zoom", "set zoom amount", OFFSET(zoom_amount), AV_OPT_TYPE_UINT, {.i64=1}, 1, 256, FLAGS | R},
-    {"offset_time", "set number of frames befor zoom offset is reset", OFFSET(offset_time), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT_MAX, FLAGS | R},
+    {"offset_time", "set number of frames before zoom offset is reset", OFFSET(offset_time), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT_MAX, FLAGS | R},
     {"n_grains", "number of grains per frame", OFFSET(n_grains), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT_MAX, FLAGS},
     {"buffer", "set the size of the buffer", OFFSET(buffer_size), AV_OPT_TYPE_UINT, {.i64=1}, 1, 8192, FLAGS},
     {"grain_w", "set the width of each grain in px", OFFSET(grain_w), AV_OPT_TYPE_UINT, {.i64=0}, 0, 8192, FLAGS},
@@ -127,7 +127,7 @@ static av_cold int init(AVFilterContext *ctx)
     granulate_ctx->lfg = av_calloc(1, sizeof(AVLFG));
     if (!granulate_ctx->lfg)
         return AVERROR(ENOMEM);
-    
+
     if (!granulate_ctx->seed)
         granulate_ctx->seed = av_get_random_seed();
     av_lfg_init(granulate_ctx->lfg, granulate_ctx->seed);
@@ -164,7 +164,7 @@ static av_cold int init(AVFilterContext *ctx)
 
 static int query_formats(const AVFilterContext *ctx, AVFilterFormatsConfig **cfg_in, AVFilterFormatsConfig **cfg_out)
 {
-    static const enum AVPixelFormat pix_fmts[] = {AV_PIX_FMT_YUV420P, AV_PIX_FMT_YUV422P, AV_PIX_FMT_YUV444P, 
+    static const enum AVPixelFormat pix_fmts[] = {AV_PIX_FMT_YUV420P, AV_PIX_FMT_YUV422P, AV_PIX_FMT_YUV444P,
                                                 AV_PIX_FMT_GRAY8, AV_PIX_FMT_RGB24, AV_PIX_FMT_BGR24, AV_PIX_FMT_NONE};
 
     return ff_set_pixel_formats_from_list2(ctx, cfg_in, cfg_out, pix_fmts);
@@ -204,7 +204,7 @@ static int config_props(AVFilterLink *inlink)
             granulate_ctx->PixFmt = AV_PIX_FMT_RGB24; granulate_ctx->copy_grain_fn = copy_grain_RGB; break;
         case (AV_PIX_FMT_BGR24):
             granulate_ctx->PixFmt = AV_PIX_FMT_BGR24; granulate_ctx->copy_grain_fn = copy_grain_RGB; break;
-        default: 
+        default:
             return AVERROR(EINVAL);
     }
 
@@ -238,7 +238,7 @@ static av_always_inline void copy_px_data2(AVFrame *dst, const AVFrame *src, int
 
 
 static void copy_grain_YUV(AVFrame *dst, const AVFrame *src, int sx, int sy, int dx, int dy,
-                            int grain_w, int grain_h, filter_mode mode, ghosting_mode ghosting, 
+                            int grain_w, int grain_h, filter_mode mode, ghosting_mode ghosting,
                             int zoom, int var_size, int pix_fmt, uint8_t log2_chroma_h, uint8_t log2_chroma_w, AVLFG *lfg)
 {
     if (var_size) {
@@ -258,7 +258,7 @@ static void copy_grain_YUV(AVFrame *dst, const AVFrame *src, int sx, int sy, int
         dx_chroma = dx >> 1;
         dy_chroma = dy >> 1;
     }
-    
+
 
     if (pix_fmt == AV_PIX_FMT_YUV422P) {
         grain_w_chroma = AV_CEIL_RSHIFT(grain_w, log2_chroma_w);
@@ -329,8 +329,8 @@ static void copy_grain_YUV(AVFrame *dst, const AVFrame *src, int sx, int sy, int
     }
 }
 
-static void copy_grain_GRAY(AVFrame *dst, const AVFrame *src, int sx, int sy, int dx, int dy, 
-                            int grain_w, int grain_h, filter_mode mode, ghosting_mode ghosting, 
+static void copy_grain_GRAY(AVFrame *dst, const AVFrame *src, int sx, int sy, int dx, int dy,
+                            int grain_w, int grain_h, filter_mode mode, ghosting_mode ghosting,
                             int zoom, int var_size, int pix_fmt, uint8_t log2_chroma_h, uint8_t log2_chroma_w, AVLFG *lfg)
 {
     if (var_size) {
@@ -346,7 +346,7 @@ static void copy_grain_GRAY(AVFrame *dst, const AVFrame *src, int sx, int sy, in
 
     if (mode == MODE_INTERLACED_V)
         col_step++;
-    
+
     int d_row_offset, d_col_offset;
     int s_row_offset, s_col_offset;
 
@@ -368,7 +368,7 @@ static void copy_grain_GRAY(AVFrame *dst, const AVFrame *src, int sx, int sy, in
 }
 
 static void copy_grain_RGB(AVFrame *dst, const AVFrame *src, int sx, int sy, int dx, int dy,
-                            int grain_w, int grain_h, filter_mode mode, ghosting_mode ghosting, 
+                            int grain_w, int grain_h, filter_mode mode, ghosting_mode ghosting,
                             int zoom, int var_size, int pix_fmt, uint8_t log2_chroma_h, uint8_t log2_chroma_w, AVLFG *lfg)
 {
     if (var_size) {
@@ -384,7 +384,7 @@ static void copy_grain_RGB(AVFrame *dst, const AVFrame *src, int sx, int sy, int
 
     if (mode == MODE_INTERLACED_V)
         col_step++;
-    
+
     int d_row_offset, s_row_offset;
     int d1_col_offset, d2_col_offset, d3_col_offset;
     int s1_col_offset, s2_col_offset, s3_col_offset;
@@ -393,12 +393,12 @@ static void copy_grain_RGB(AVFrame *dst, const AVFrame *src, int sx, int sy, int
         d_row_offset = dy + row;
         s_row_offset = sy + row / zoom;
         for (int col = 0; col < grain_w; col += col_step) {
-            d1_col_offset = dx + col * N_RGB_PLANES + RGB_R_OFFSET;
-            s1_col_offset = sx + col / zoom * N_RGB_PLANES + RGB_R_OFFSET;
-            d2_col_offset = dx + col * N_RGB_PLANES + RGB_G_OFFSET;
-            s2_col_offset = sx + col / zoom * N_RGB_PLANES + RGB_G_OFFSET;
-            d3_col_offset = dx + col * N_RGB_PLANES + RGB_B_OFFSET;
-            s3_col_offset = sx + col / zoom * N_RGB_PLANES + RGB_B_OFFSET;
+            d1_col_offset = (dx + col) * N_RGB_PLANES + RGB_R_OFFSET;
+            s1_col_offset = (sx + col / zoom) * N_RGB_PLANES + RGB_R_OFFSET;
+            d2_col_offset = (dx + col) * N_RGB_PLANES + RGB_G_OFFSET;
+            s2_col_offset = (sx + col / zoom) * N_RGB_PLANES + RGB_G_OFFSET;
+            d3_col_offset = (dx + col) * N_RGB_PLANES + RGB_B_OFFSET;
+            s3_col_offset = (sx + col / zoom) * N_RGB_PLANES + RGB_B_OFFSET;
             if (mode != MODE_DITHER) {
                 if (!ghosting) {
                     copy_px_data0(dst, src, d_row_offset, s_row_offset, d1_col_offset, s1_col_offset);
@@ -453,7 +453,7 @@ static void granulate_rand(const GranulateContext *ctx, AVFrame *dst, AVFrame **
         g_src = (ctx->delay_set + ctx->frame_count) % ctx->buffer_size;
         src_f = src[g_src];
     }
-    
+
     for (int grain_count = 0; grain_count < n_grains; grain_count++) {
         if (!ctx->delay_set) {
             if (ctx->buffer_full) {
@@ -588,7 +588,7 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
         granulate_ctx->zoom_offset_w = 0;
         granulate_ctx->zoom_offset_h = 0;
     }
-    
+
     if (granulate_ctx->zoom_set && granulate_ctx->zoom_amount > 1) {
         if (granulate_ctx->zoom_offset_w >= (granulate_ctx->grain_w - (granulate_ctx->grain_w / granulate_ctx->zoom_amount)) || granulate_ctx->zoom_offset_h >= (granulate_ctx->grain_h - (granulate_ctx->grain_h / granulate_ctx->zoom_amount)))
             set_offset(granulate_ctx);
@@ -614,7 +614,7 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
             if (!(granulate_ctx->frame_count % granulate_ctx->delay))
                 granulate_ctx->delay_set = 1 + (av_lfg_get(granulate_ctx->lfg) % (granulate_ctx->buffer_size - 1));
         }
-        
+
         if (granulate_ctx->static_grains) {
             if (!granulate_ctx->grains_set) {
                 init_granulate_pos(granulate_ctx, width, height);
@@ -633,7 +633,7 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
         }
 
         granulate_ctx->buffer_index = (granulate_ctx->buffer_index + 1) % granulate_ctx->buffer_size;
-        
+
         if (!granulate_ctx->buffer_index)
             granulate_ctx->buffer_full = 1;
     }
