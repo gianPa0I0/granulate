@@ -567,13 +567,13 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
     int width = in->width;
     int height = in->height;
 
-    if (granulate_ctx->grain_h && granulate_ctx->grain_w)
+    if (granulate_ctx->grain_h || granulate_ctx->grain_w)
         granulate_ctx->fullscreen = 0;
 
     if (!granulate_ctx->fullscreen) {
-        if (granulate_ctx->grain_w > width)
+        if (granulate_ctx->grain_w > width || granulate_ctx->grain_w == 0)
             granulate_ctx->grain_w = width;
-        if (granulate_ctx->grain_h > height)
+        if (granulate_ctx->grain_h > height || granulate_ctx->grain_h == 0)
             granulate_ctx->grain_h = height;
     } else {
         granulate_ctx->grain_w = width;
