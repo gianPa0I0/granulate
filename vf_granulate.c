@@ -171,7 +171,6 @@ static int query_formats(const AVFilterContext *ctx, AVFilterFormatsConfig **cfg
 
 static int granulate_process_command(AVFilterContext *ctx, const char *cmd, const char *arg, char *res, int res_len, int flags)
 {
-    av_log(ctx, AV_LOG_INFO, "Received command: %s=%s\n", cmd, arg);
     return ff_filter_process_command(ctx, cmd, arg, res, res_len, flags);
 }
 
@@ -443,7 +442,7 @@ static void granulate_rand(const GranulateContext *ctx, AVFrame *dst, AVFrame **
 
     int grain_w = ctx->grain_w;
     int grain_h = ctx->grain_h;
-    int n_grains = ctx->n_grains;
+    unsigned n_grains = ctx->n_grains;
     int offset_w = ctx->zoom_offset_w;
     int offset_h = ctx->zoom_offset_h;
     int g_src = 0;
@@ -479,7 +478,7 @@ static void granulate_pos(const GranulateContext *ctx, AVFrame *dst, AVFrame **s
 
     int grain_w = ctx->grain_w;
     int grain_h = ctx->grain_h;
-    int n_grains = ctx->n_grains;
+    unsigned n_grains = ctx->n_grains;
     int offset_w = ctx->zoom_offset_w;
     int offset_h = ctx->zoom_offset_h;
     GrainPos *grain_pos = ctx->grain_pos;
@@ -510,7 +509,7 @@ static void init_granulate_pos(const GranulateContext *ctx, int width, int heigh
 
     int grain_w = ctx->grain_w;
     int grain_h = ctx->grain_h;
-    int n_grains = ctx->n_grains;
+    unsigned n_grains = ctx->n_grains;
     GrainPos *grain_pos = ctx->grain_pos;
 
     for (unsigned grain_count = 0; grain_count < n_grains; grain_count++) {
@@ -537,7 +536,7 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
 
     ret = ff_inlink_make_frame_writable(inlink, &in);
     if (ret < 0)
-        return ret;
+        goto fail;
 
     out = in;
 
