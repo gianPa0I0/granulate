@@ -48,11 +48,12 @@ Nella root di ffmpeg, mandare comando "./configure" e poi "make".
 
 `reset_time` : numero di frame prima del reset delle coordinate fisse (int 0 - MAX)
 
-`delay` : numero di frame per il quale mantenere un delay fisso nel buffer (int 0 default - 8162)
+`delay` : numero di frame per il quale mantenere un delay fisso nel buffer (int 0 default - MAX)
 
 `seed` : seed per AVlfg (0 default - MAX)
 
-Per usare il filtro ./ffmpeg -i "path file di input" -vf "granulate=parametro1=x:parametro2=y..." "path di output"
+Per usare il filtro ./ffmpeg -i "path file di input" -vf "granulate=parametro1=x:parametro2=y..." "path di output"  
+./ffmpeg -stream_loop -1 -re -i "path file di input" -vf "granulate=parameter1=x:parameter2=y..." -f matroska | (programma di gestione output es. cvlc) -
 
 
 # FF_VF_GRANULATE English
@@ -104,10 +105,12 @@ Go back to ffmpeg root and send command "./configure" and then "make".
 
 `reset_time` : number of frames before the fixed grain position is reset (int 0 - MAX)
 
-`delay` : number of frames before refresh of fixed buffer delay (int 0 default - 8192)
+`delay` : number of frames before refresh of fixed buffer delay (int 0 default - MAX)
 
 `seed` : set seed for AVlfg (0 default - MAX)
 
 
-Filter usage:
-./ffmpeg -i "video path" -vf "granulate=parameter1=x:parameter2=y..." "output path"
+Filter usage:  
+./ffmpeg -i "video path" -vf "granulate=parameter1=x:parameter2=y..." "output path"  
+For live direct Output:  
+./ffmpeg -stream_loop -1 -re -i "video path" -vf "granulate=parameter1=x:parameter2=y..." -f matroska | (program to handle output es. cvlc) -
