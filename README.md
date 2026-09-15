@@ -56,7 +56,7 @@ Nella root di ffmpeg, mandare comando "./configure" e poi "make".
 
 Per usare il filtro  
 ./ffmpeg -i "path file di input" -vf "granulate=parametro1=x:parametro2=y..." "path di output"  
-Per usare il filtro con Output diretto in riproduzione
+Per usare il filtro con Output diretto in riproduzione  
 ./ffmpeg -stream_loop -1 -re -i "path file di input" -vf "granulate=parameter1=x:parameter2=y..." -f matroska - | (programma di gestione output es. cvlc) -  
 I seguenti parametri sono modulabili runtime:  
 `mode` `zoom` `offset_time` `ghosting` `reset_time` `delay`  
