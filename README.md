@@ -35,7 +35,7 @@ Nella root di ffmpeg, mandare comando "./configure" e poi "make".
 
 `grain_h` : altezza in pixel di ogni grano  (int 0 - 8192)  
 
-*Se w o h sono a zero, il grano sarà fullscreen
+*Se w o h sono a zero, seguiranno le rispettive dimensioni dell'INPUT FILE
 
 `var_size` : larghezza e altezza modificati casualmente, rimanendo nei valori tra 1 e grain_w e grain_h (int 0 - 1)
 
@@ -54,9 +54,9 @@ Nella root di ffmpeg, mandare comando "./configure" e poi "make".
 
 ## Comandi
 
-Per usare il filtro  
+Per usare il filtro:  
 ./ffmpeg -i "path file di input" -vf "granulate=parametro1=x:parametro2=y..." "path di output"  
-Per usare il filtro con Output diretto in riproduzione  
+Per usare il filtro con Output diretto in riproduzione:  
 ./ffmpeg -stream_loop -1 -re -i "path file di input" -vf "granulate=parameter1=x:parameter2=y..." -f matroska - | (programma di gestione output es. cvlc) -  
 I seguenti parametri sono modulabili runtime:  
 `mode` `zoom` `offset_time` `ghosting` `reset_time` `delay`  
@@ -100,7 +100,7 @@ Go back to ffmpeg root and send command "./configure" and then "make".
 
 `grain_h` : height of each grain in pixels (int 0 - 8192)  
 
-*If either w or h is 0, the grain will be set to fullscreen
+*When w or h are set to zero, they will follow the respective size of the INPUT FILE
 
 `var_size` : toggle random grain size, uses width and height as max value (int 0 - 1)
 
