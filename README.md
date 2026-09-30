@@ -50,7 +50,7 @@ Nella root di ffmpeg, mandare comando "./configure" e poi "make".
 
 `delay` : numero di frame per il quale mantenere un delay fisso nel buffer (int 0 default - MAX)
 
-`seed` : seed per AVlfg (0 default - MAX)
+`seed` : seed per AVlfg, quando < 0 random (MIN - MAX - default -1)
 
 ## Comandi
 
@@ -115,7 +115,7 @@ Go back to ffmpeg root and send command "./configure" and then "make".
 
 `delay` : number of frames before refresh of fixed buffer delay (int 0 default - MAX)
 
-`seed` : set seed for AVlfg (0 default - MAX)
+`seed` : set seed for AVlfg, random when < 0 (MIN - MAX, default -1)
 
 ## Commands
 
