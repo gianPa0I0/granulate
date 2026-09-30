@@ -73,7 +73,7 @@ typedef struct GranulateContext {
 
     int PixFmt;
     AVLFG *lfg;
-    uint32_t seed;
+    int64_t seed;
     filter_mode mode;
     ghosting_mode ghosting;
     unsigned int buffer_size, buffer_index, buffer_full;
@@ -113,7 +113,7 @@ static const AVOption granulate_options[] = {
     {"static_grains", "toggle stable grain position", OFFSET(static_grains), AV_OPT_TYPE_BOOL, {.i64=0}, 0, 1, FLAGS},
     {"reset_time","set number of frames before grain_pos reset", OFFSET(reset_time), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT_MAX, FLAGS | R},
     {"delay", "set number of frames before refresh of delay", OFFSET(delay), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT_MAX, FLAGS | R},
-    {"seed", "set seed for AVlfg", OFFSET(seed), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT32_MAX, FLAGS},
+    {"seed", "set seed for AVlfg", OFFSET(seed), AV_OPT_TYPE_INT64, {.i64=-1}, INT64_MIN, INT64_MAX, FLAGS},
     { NULL }
 };
 
@@ -127,7 +127,7 @@ static av_cold int init(AVFilterContext *ctx)
     if (!granulate_ctx->lfg)
         return AVERROR(ENOMEM);
 
-    if (!granulate_ctx->seed)
+    if (granulate_ctx->seed < 0)
         granulate_ctx->seed = av_get_random_seed();
     av_lfg_init(granulate_ctx->lfg, granulate_ctx->seed);
 
