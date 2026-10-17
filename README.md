@@ -59,7 +59,7 @@ Per usare il filtro:
 Per usare il filtro con Output diretto in riproduzione:  
 ./ffmpeg -stream_loop -1 -re -i "path file di input" -vf "granulate=parameter1=x:parameter2=y..." -f matroska - | (programma di gestione output es. cvlc) -  
 I seguenti parametri sono modulabili runtime:  
-`mode` `zoom` `offset_time` `ghosting` `reset_time` `delay`  
+`mode` `grain_w` `grain_h` `zoom` `offset_time` `ghosting` `reset_time` `delay`  
 Per modifica runtime premere `c` sull'interfaccia ffmpeg e scrivere:  
 `granulate (time to wait "-1" for ASAP) "param" "value"` Premere invio
 
@@ -124,6 +124,6 @@ Filter usage:
 For live direct Output:  
 ./ffmpeg -stream_loop -1 -re -i "video path" -vf "granulate=parameter1=x:parameter2=y..." -f matroska - | (program to handle output es. cvlc) -  
 The following parameters can be modulated runtime  
-`mode` `zoom` `offset_time` `ghosting` `reset_time` `delay`  
+`mode` `grain_w` `grain_h` `zoom` `offset_time` `ghosting` `reset_time` `delay`  
 To modulate a parameter runtime, press `c` on the ffmpeg interface and write:  
 `granulate (time to wait "-1" for ASAP) "param" "value"`  Press enter
