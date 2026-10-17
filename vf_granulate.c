@@ -66,6 +66,7 @@ typedef struct GrainPos {
     int pos_y;
     int g_pos_x;
     int g_pos_y;
+    unsigned int delay_offset;
 } GrainPos;
 
 typedef struct GranulateContext {
@@ -110,8 +111,8 @@ static const AVOption granulate_options[] = {
     {"grain_h", "set the height of each grain in px", OFFSET(grain_h), AV_OPT_TYPE_UINT, {.i64=0}, 0, 8192, FLAGS},
     {"var_size", "toggle random grain size (grain_size as max size)", OFFSET(var_size), AV_OPT_TYPE_BOOL, {.i64=0}, 0, 1, FLAGS},
     {"ghosting", "select type of ghosting", OFFSET(ghosting), AV_OPT_TYPE_INT, {.i64=NO_GHOSTING}, NO_GHOSTING, CHROMA_GHOSTING, FLAGS | R},
-    {"static_grains", "toggle stable grain position", OFFSET(static_grains), AV_OPT_TYPE_BOOL, {.i64=0}, 0, 1, FLAGS},
-    {"reset_time","set number of frames before grain_pos reset", OFFSET(reset_time), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT_MAX, FLAGS | R},
+    {"static_grains", "toggle stable grain position", OFFSET(static_grains), AV_OPT_TYPE_BOOL, {.i64=0}, 0, 1, FLAGS | R},
+    {"reset_time","set number of frames before static grains are reset", OFFSET(reset_time), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT_MAX, FLAGS | R},
     {"delay", "set number of frames before refresh of delay", OFFSET(delay), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT_MAX, FLAGS | R},
     {"seed", "set seed for AVlfg", OFFSET(seed), AV_OPT_TYPE_INT64, {.i64=-1}, INT64_MIN, INT64_MAX, FLAGS},
     { NULL }
@@ -131,7 +132,7 @@ static av_cold int init(AVFilterContext *ctx)
         granulate_ctx->seed = av_get_random_seed();
     av_lfg_init(granulate_ctx->lfg, granulate_ctx->seed);
 
-    if (granulate_ctx->static_grains && granulate_ctx->n_grains) {
+    if (granulate_ctx->n_grains) {
         granulate_ctx->grain_pos = av_calloc(granulate_ctx->n_grains, sizeof(GrainPos));
 
         if (!granulate_ctx->grain_pos)
@@ -156,6 +157,7 @@ static av_cold int init(AVFilterContext *ctx)
     granulate_ctx->zoom_set = 0;
     granulate_ctx->buffer_full = 0;
     granulate_ctx->delay_set = 0;
+    granulate_ctx->grains_set = 0;
     granulate_ctx->fullscreen = 1;
 
     return 0;
@@ -243,38 +245,13 @@ static void copy_grain_YUV(AVFrame *dst, const AVFrame *src, int sx, int sy, int
         grain_h = av_lfg_get(lfg) % (grain_h + 1);
         grain_w = av_lfg_get(lfg) % (grain_w + 1);
     }
-    int grain_w_chroma;
-    int grain_h_chroma;
-    int sx_chroma, sy_chroma;
-    int dx_chroma, dy_chroma;
 
-    if (pix_fmt == AV_PIX_FMT_YUV420P) {
-        grain_w_chroma = AV_CEIL_RSHIFT(grain_w, log2_chroma_w);
-        grain_h_chroma = AV_CEIL_RSHIFT(grain_h, log2_chroma_h);
-        sx_chroma = sx >> 1;
-        sy_chroma = sy >> 1;
-        dx_chroma = dx >> 1;
-        dy_chroma = dy >> 1;
-    }
-
-
-    if (pix_fmt == AV_PIX_FMT_YUV422P) {
-        grain_w_chroma = AV_CEIL_RSHIFT(grain_w, log2_chroma_w);
-        grain_h_chroma = grain_h;
-        sx_chroma = sx >> 1;
-        sy_chroma = sy;
-        dx_chroma = dx >> 1;
-        dy_chroma = dy;
-    }
-
-    if (pix_fmt == AV_PIX_FMT_YUV444P) {
-        grain_w_chroma = grain_w;
-        grain_h_chroma = grain_h;
-        sx_chroma = sx;
-        sy_chroma = sy;
-        dx_chroma = dx;
-        dy_chroma = dy;
-    }
+    int grain_w_chroma = AV_CEIL_RSHIFT(grain_w, log2_chroma_w);
+    int grain_h_chroma = AV_CEIL_RSHIFT(grain_h, log2_chroma_h);
+    int sx_chroma = sx >> log2_chroma_w;
+    int sy_chroma = sy >> log2_chroma_h;
+    int dx_chroma = dx >> log2_chroma_w;
+    int dy_chroma = dy >> log2_chroma_h;
 
     int row_step = 1;
     int col_step = 1;
@@ -447,10 +424,6 @@ static void granulate_rand(const GranulateContext *ctx, AVFrame *dst, AVFrame **
     int offset_h = ctx->zoom_offset_h;
     int g_src = 0;
 
-    if (ctx->delay_set) {
-        g_src = (ctx->delay_set + ctx->frame_count) % ctx->buffer_size;
-        src_f = src[g_src];
-    }
 
     for (unsigned grain_count = 0; grain_count < n_grains; grain_count++) {
         if (!ctx->delay_set) {
@@ -462,6 +435,10 @@ static void granulate_rand(const GranulateContext *ctx, AVFrame *dst, AVFrame **
                 g_src = av_lfg_get(ctx->lfg) % (ctx->buffer_index + 1);
                 src_f = src[g_src];
             }
+        }
+        else {
+            g_src = (ctx->grain_pos[grain_count].delay_offset + ctx->frame_count) % ctx->buffer_size;
+            src_f = src[g_src];
         }
         int sx = av_lfg_get(ctx->lfg) % (width - grain_w + 1);
         int sy = av_lfg_get(ctx->lfg) % (height - grain_h + 1);
@@ -484,11 +461,6 @@ static void granulate_pos(const GranulateContext *ctx, AVFrame *dst, AVFrame **s
     GrainPos *grain_pos = ctx->grain_pos;
     int g_src = 0;
 
-    if (ctx->delay_set) {
-        g_src = (ctx->delay_set + ctx->frame_count) % ctx->buffer_size;
-        src_f = src[g_src];
-    }
-
     for (unsigned grain_count = 0; grain_count < n_grains; grain_count++) {
         if (!ctx->delay_set) {
             if (ctx->buffer_full) {
@@ -499,6 +471,10 @@ static void granulate_pos(const GranulateContext *ctx, AVFrame *dst, AVFrame **s
                 g_src = av_lfg_get(ctx->lfg) % (ctx->buffer_index + 1);
                 src_f = src[g_src];
             }
+        }
+        else {
+            g_src = (ctx->grain_pos[grain_count].delay_offset + ctx->frame_count) % ctx->buffer_size;
+            src_f = src[g_src];
         }
         ctx->copy_grain_fn(dst, src_f, grain_pos[grain_count].g_pos_x + offset_w, grain_pos[grain_count].g_pos_y + offset_h, grain_pos[grain_count].pos_x, grain_pos[grain_count].pos_y, grain_w, grain_h, ctx->mode, ctx->ghosting, ctx->zoom_amount, ctx->var_size, ctx->PixFmt, ctx->log2_chroma_h, ctx->log2_chroma_w, ctx->lfg);
     }
@@ -518,6 +494,15 @@ static void init_granulate_pos(const GranulateContext *ctx, int width, int heigh
         grain_pos[grain_count].pos_x = av_lfg_get(ctx->lfg) % (width - grain_w + 1);
         grain_pos[grain_count].pos_y = av_lfg_get(ctx->lfg) % (height - grain_h + 1);
     }
+}
+
+static void delay_pos(const GranulateContext *ctx)
+{
+    unsigned n_grains = ctx->n_grains;
+    if (ctx->delay_set && ctx->frame_count % ctx->delay)
+        return;
+    for (unsigned grain_count = 0; grain_count < n_grains; grain_count++)
+        ctx->grain_pos[grain_count].delay_offset = 1 + (av_lfg_get(ctx->lfg) % (ctx->buffer_size - 1));
 }
 
 static void set_offset(GranulateContext *ctx) {
@@ -588,8 +573,8 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
         goto fail;
 
     if (granulate_ctx->delay && granulate_ctx->buffer_size > 1 && granulate_ctx->buffer_full) {
-        if (!(granulate_ctx->frame_count % granulate_ctx->delay) || !granulate_ctx->delay_set)
-            granulate_ctx->delay_set = 1 + (av_lfg_get(granulate_ctx->lfg) % (granulate_ctx->buffer_size - 1));
+        delay_pos(granulate_ctx);
+        granulate_ctx->delay_set = 1;
     }
 
     if (granulate_ctx->static_grains) {
@@ -637,7 +622,7 @@ static av_cold void uninit(AVFilterContext *ctx)
             av_frame_free(&granulate_ctx->fbuffer[i]);
     }
 
-    if (granulate_ctx->static_grains && granulate_ctx->n_grains)
+    if (granulate_ctx->n_grains)
         av_freep(&granulate_ctx->grain_pos);
 
     av_freep(&granulate_ctx->fbuffer);
