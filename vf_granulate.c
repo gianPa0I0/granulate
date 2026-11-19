@@ -115,7 +115,7 @@ static const AVOption granulate_options[] = {
     {"static_grains", "toggle stable grain position", OFFSET(static_grains), AV_OPT_TYPE_BOOL, {.i64=0}, 0, 1, FLAGS | R},
     {"reset_time","set number of frames before static grains are reset", OFFSET(reset_time), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT_MAX, FLAGS | R},
     {"delay", "set number of frames before refresh of delay", OFFSET(delay), AV_OPT_TYPE_UINT, {.i64=0}, 0, UINT_MAX, FLAGS | R},
-    {"seed", "set seed for AVlfg", OFFSET(seed), AV_OPT_TYPE_INT64, {.i64=-1}, INT64_MIN, INT64_MAX, FLAGS},
+    {"seed", "set seed for AVlfg", OFFSET(seed), AV_OPT_TYPE_INT64, {.i64=-1}, -1, UINT32_MAX, FLAGS},
     { NULL }
 };
 
@@ -521,14 +521,16 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
     AVFrame *out = NULL;
     int ret;
 
-    ret = ff_inlink_make_frame_writable(inlink, &in);
-    if (ret < 0)
-        goto fail;
-
-    out = in;
-
-    if (!granulate_ctx->n_grains)
+    if (granulate_ctx->n_grains) {
+        ret = ff_inlink_make_frame_writable(inlink, &in);
+        if (ret < 0)
+            goto fail;
+        out = in;
+    }
+    else {
+        out = in;
         goto filter_end;
+    }
 
     int width = in->width;
     int height = in->height;
